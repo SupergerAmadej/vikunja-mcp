@@ -8,11 +8,12 @@ services:
   vikunja-mcp:
     build: .
     container_name: vikunja-mcp
+    ports:
+      - "9090:9090"
     environment:
       VIKUNJA_BASE_URL: http://vikunja:3456
       VIKUNJA_TOKEN: ${VIKUNJA_TOKEN}
+      VIKUNJA_MCP_API_KEY: ${VIKUNJA_MCP_API_KEY}
       VIKUNJA_TIMEOUT_MS: 10000
     depends_on:
       - vikunja
-    stdin_open: true
-    tty: false

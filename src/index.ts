@@ -1,13 +1,16 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
 import { z } from "zod/v4";
 
 type JsonRecord = Record<string, unknown>;
 
 const DEFAULT_BASE_URL = "http://vikunja:3456";
 const DEFAULT_TIMEOUT_MS = 10_000;
+const DEFAULT_PORT = 9090;
+const DEFAULT_BIND_HOST = "0.0.0.0";
 
-function requireEnv(name: string): string {
+function getRequiredEnv(name: string): string {
   const value = process.env[name]?.trim();
 
   if (!value) {
@@ -15,6 +18,10 @@ function requireEnv(name: string): string {
   }
 
   return value;
+}
+
+function requireEnv(name: string): string {
+  return getRequiredEnv(name);
 }
 
 function getBaseApiUrl(): string {
@@ -41,10 +48,23 @@ function getTimeoutMs(): number {
   return DEFAULT_TIMEOUT_MS;
 }
 
+function getPort(): number {
+  const parsed = Number(process.env.PORT ?? "");
+
+  if (Number.isInteger(parsed) && parsed > 0 && parsed <= 65535) {
+    return parsed;
+  }
+
+  return DEFAULT_PORT;
+}
+
 const config = {
   baseApiUrl: getBaseApiUrl(),
   token: requireEnv("VIKUNJA_TOKEN"),
+  apiKey: getRequiredEnv("VIKUNJA_MCP_API_KEY"),
   timeoutMs: getTimeoutMs(),
+  port: getPort(),
+  host: process.env.HOST?.trim() || DEFAULT_BIND_HOST,
 };
 
 function asJsonRecord(value: unknown): JsonRecord {
@@ -203,306 +223,382 @@ async function getProjects(params?: { page?: number; perPage?: number; search?: 
   return Array.isArray(response.data) ? response.data.map(summarizeProject) : [];
 }
 
-const server = new McpServer({
-  name: "vikunja-local",
-  version: "0.1.0",
-});
+function createServer() {
+  const server = new McpServer({
+    name: "vikunja-http",
+    version: "0.1.0",
+  });
 
-server.registerTool(
-  "vikunja_health",
-  {
-    title: "Vikunja Health",
-    description: "Verify that the configured Vikunja API token and base URL work.",
-    annotations: {
-      readOnlyHint: true,
-      idempotentHint: true,
-      openWorldHint: true,
+  server.registerTool(
+    "vikunja_health",
+    {
+      title: "Vikunja Health",
+      description: "Verify that the configured Vikunja API token and base URL work.",
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
     },
-  },
-  async () => {
-    const projects = await getProjects({ perPage: 1 });
+    async () => {
+      const projects = await getProjects({ perPage: 1 });
 
-    return toolResult("Vikunja connection OK", {
-      baseApiUrl: config.baseApiUrl,
-      timeoutMs: config.timeoutMs,
-      sampleProjectCount: projects.length,
-    });
-  },
-);
-
-server.registerTool(
-  "list_projects",
-  {
-    title: "List Projects",
-    description: "List Vikunja projects available to the current token.",
-    inputSchema: {
-      search: z.string().optional(),
-      page: z.number().int().positive().optional(),
-      perPage: z.number().int().positive().max(100).optional(),
+      return toolResult("Vikunja connection OK", {
+        baseApiUrl: config.baseApiUrl,
+        timeoutMs: config.timeoutMs,
+        sampleProjectCount: projects.length,
+      });
     },
-    annotations: {
-      readOnlyHint: true,
-      idempotentHint: true,
-      openWorldHint: true,
+  );
+
+  server.registerTool(
+    "list_projects",
+    {
+      title: "List Projects",
+      description: "List Vikunja projects available to the current token.",
+      inputSchema: {
+        search: z.string().optional(),
+        page: z.number().int().positive().optional(),
+        perPage: z.number().int().positive().max(100).optional(),
+      },
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
     },
-  },
-  async ({ search, page, perPage }) => {
-    const projects = await getProjects({ search, page, perPage });
+    async ({ search, page, perPage }) => {
+      const projects = await getProjects({ search, page, perPage });
 
-    return toolResult("Projects", {
-      count: projects.length,
-      projects,
-    });
-  },
-);
-
-server.registerTool(
-  "list_tasks",
-  {
-    title: "List Tasks",
-    description: "List tasks from Vikunja, with optional client-side filtering by project and completion state.",
-    inputSchema: {
-      projectId: z.number().int().positive().optional(),
-      search: z.string().optional(),
-      page: z.number().int().positive().optional(),
-      perPage: z.number().int().positive().max(100).optional(),
-      includeDone: z.boolean().optional(),
+      return toolResult("Projects", {
+        count: projects.length,
+        projects,
+      });
     },
-    annotations: {
-      readOnlyHint: true,
-      idempotentHint: true,
-      openWorldHint: true,
+  );
+
+  server.registerTool(
+    "list_tasks",
+    {
+      title: "List Tasks",
+      description: "List tasks from Vikunja, with optional client-side filtering by project and completion state.",
+      inputSchema: {
+        projectId: z.number().int().positive().optional(),
+        search: z.string().optional(),
+        page: z.number().int().positive().optional(),
+        perPage: z.number().int().positive().max(100).optional(),
+        includeDone: z.boolean().optional(),
+      },
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
     },
-  },
-  async ({ projectId, search, page, perPage, includeDone }) => {
-    const query = new URLSearchParams();
+    async ({ projectId, search, page, perPage, includeDone }) => {
+      const query = new URLSearchParams();
 
-    if (search) {
-      query.set("s", search);
-    }
+      if (search) {
+        query.set("s", search);
+      }
 
-    if (page) {
-      query.set("page", String(page));
-    }
+      if (page) {
+        query.set("page", String(page));
+      }
 
-    if (perPage) {
-      query.set("per_page", String(perPage));
-    }
+      if (perPage) {
+        query.set("per_page", String(perPage));
+      }
 
-    const suffix = query.size > 0 ? `?${query.toString()}` : "";
-    const response = await vikunjaFetch<unknown[]>(`/tasks/all${suffix}`);
-    const rawTasks = Array.isArray(response.data) ? response.data : [];
-    let tasks = rawTasks.map(summarizeTask);
+      const suffix = query.size > 0 ? `?${query.toString()}` : "";
+      const response = await vikunjaFetch<unknown[]>(`/tasks/all${suffix}`);
+      const rawTasks = Array.isArray(response.data) ? response.data : [];
+      let tasks = rawTasks.map(summarizeTask);
 
-    if (projectId !== undefined) {
-      tasks = tasks.filter((task) => task.project_id === projectId);
-    }
+      if (projectId !== undefined) {
+        tasks = tasks.filter((task) => task.project_id === projectId);
+      }
 
-    if (includeDone !== true) {
-      tasks = tasks.filter((task) => task.done !== true);
-    }
+      if (includeDone !== true) {
+        tasks = tasks.filter((task) => task.done !== true);
+      }
 
-    return toolResult("Tasks", {
-      count: tasks.length,
-      tasks,
-    });
-  },
-);
-
-server.registerTool(
-  "get_task",
-  {
-    title: "Get Task",
-    description: "Fetch one Vikunja task by id.",
-    inputSchema: {
-      taskId: z.number().int().positive(),
+      return toolResult("Tasks", {
+        count: tasks.length,
+        tasks,
+      });
     },
-    annotations: {
-      readOnlyHint: true,
-      idempotentHint: true,
-      openWorldHint: true,
+  );
+
+  server.registerTool(
+    "get_task",
+    {
+      title: "Get Task",
+      description: "Fetch one Vikunja task by id.",
+      inputSchema: {
+        taskId: z.number().int().positive(),
+      },
+      annotations: {
+        readOnlyHint: true,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
     },
-  },
-  async ({ taskId }) => {
-    const task = summarizeTask(await getTask(taskId));
+    async ({ taskId }) => {
+      const task = summarizeTask(await getTask(taskId));
 
-    return toolResult("Task", task);
-  },
-);
-
-server.registerTool(
-  "create_project",
-  {
-    title: "Create Project",
-    description: "Create a new Vikunja project.",
-    inputSchema: {
-      title: z.string().min(1),
-      description: z.string().optional(),
-      identifier: z.string().optional(),
-      hexColor: z.string().optional(),
-      isFavorite: z.boolean().optional(),
+      return toolResult("Task", task);
     },
-    annotations: {
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true,
+  );
+
+  server.registerTool(
+    "create_project",
+    {
+      title: "Create Project",
+      description: "Create a new Vikunja project.",
+      inputSchema: {
+        title: z.string().min(1),
+        description: z.string().optional(),
+        identifier: z.string().optional(),
+        hexColor: z.string().optional(),
+        isFavorite: z.boolean().optional(),
+      },
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
     },
-  },
-  async ({ title, description, identifier, hexColor, isFavorite }) => {
-    const payload = {
-      title,
-      description,
-      identifier,
-      hex_color: hexColor,
-      is_favorite: isFavorite,
-    };
+    async ({ title, description, identifier, hexColor, isFavorite }) => {
+      const payload = {
+        title,
+        description,
+        identifier,
+        hex_color: hexColor,
+        is_favorite: isFavorite,
+      };
 
-    const response = await vikunjaFetch<JsonRecord>("/projects", {
-      method: "PUT",
-      body: JSON.stringify(payload),
-    });
+      const response = await vikunjaFetch<JsonRecord>("/projects", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
 
-    return toolResult("Created project", summarizeProject(response.data));
-  },
-);
-
-server.registerTool(
-  "create_task",
-  {
-    title: "Create Task",
-    description: "Create a new task in a Vikunja project.",
-    inputSchema: {
-      projectId: z.number().int().positive(),
-      title: z.string().min(1),
-      description: z.string().optional(),
-      dueDate: z.string().datetime().optional(),
-      priority: z.number().int().min(0).max(5).optional(),
+      return toolResult("Created project", summarizeProject(response.data));
     },
-    annotations: {
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true,
+  );
+
+  server.registerTool(
+    "create_task",
+    {
+      title: "Create Task",
+      description: "Create a new task in a Vikunja project.",
+      inputSchema: {
+        projectId: z.number().int().positive(),
+        title: z.string().min(1),
+        description: z.string().optional(),
+        dueDate: z.string().datetime().optional(),
+        priority: z.number().int().min(0).max(5).optional(),
+      },
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
     },
-  },
-  async ({ projectId, title, description, dueDate, priority }) => {
-    const payload = {
-      title,
-      description,
-      due_date: dueDate,
-      priority,
-    };
+    async ({ projectId, title, description, dueDate, priority }) => {
+      const payload = {
+        title,
+        description,
+        due_date: dueDate,
+        priority,
+      };
 
-    const response = await vikunjaFetch<JsonRecord>(`/projects/${projectId}/tasks`, {
-      method: "PUT",
-      body: JSON.stringify(payload),
-    });
+      const response = await vikunjaFetch<JsonRecord>(`/projects/${projectId}/tasks`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
 
-    return toolResult("Created task", summarizeTask(response.data));
-  },
-);
-
-server.registerTool(
-  "update_task",
-  {
-    title: "Update Task",
-    description: "Patch a Vikunja task by reading the current task, merging selected fields, and posting the updated task back.",
-    inputSchema: {
-      taskId: z.number().int().positive(),
-      title: z.string().min(1).optional(),
-      description: z.string().optional(),
-      done: z.boolean().optional(),
-      dueDate: z.string().datetime().nullable().optional(),
-      priority: z.number().int().min(0).max(5).optional(),
-      percentDone: z.number().int().min(0).max(100).optional(),
+      return toolResult("Created task", summarizeTask(response.data));
     },
-    annotations: {
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true,
-    },
-  },
-  async ({ taskId, title, description, done, dueDate, priority, percentDone }) => {
-    const existing = await getTask(taskId);
-    const updatedTask = {
-      ...existing,
-      ...(title !== undefined ? { title } : {}),
-      ...(description !== undefined ? { description } : {}),
-      ...(done !== undefined ? { done } : {}),
-      ...(dueDate !== undefined ? { due_date: dueDate } : {}),
-      ...(priority !== undefined ? { priority } : {}),
-      ...(percentDone !== undefined ? { percent_done: percentDone } : {}),
-    };
+  );
 
-    const response = await vikunjaFetch<JsonRecord>(`/tasks/${taskId}`, {
-      method: "POST",
-      body: JSON.stringify(updatedTask),
-    });
-
-    return toolResult("Updated task", summarizeTask(response.data));
-  },
-);
-
-server.registerTool(
-  "complete_task",
-  {
-    title: "Complete Task",
-    description: "Mark a Vikunja task as done.",
-    inputSchema: {
-      taskId: z.number().int().positive(),
+  server.registerTool(
+    "update_task",
+    {
+      title: "Update Task",
+      description: "Patch a Vikunja task by reading the current task, merging selected fields, and posting the updated task back.",
+      inputSchema: {
+        taskId: z.number().int().positive(),
+        title: z.string().min(1).optional(),
+        description: z.string().optional(),
+        done: z.boolean().optional(),
+        dueDate: z.string().datetime().nullable().optional(),
+        priority: z.number().int().min(0).max(5).optional(),
+        percentDone: z.number().int().min(0).max(100).optional(),
+      },
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
     },
-    annotations: {
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true,
-    },
-  },
-  async ({ taskId }) => {
-    const existing = await getTask(taskId);
-    const response = await vikunjaFetch<JsonRecord>(`/tasks/${taskId}`, {
-      method: "POST",
-      body: JSON.stringify({
+    async ({ taskId, title, description, done, dueDate, priority, percentDone }) => {
+      const existing = await getTask(taskId);
+      const updatedTask = {
         ...existing,
-        done: true,
-      }),
-    });
+        ...(title !== undefined ? { title } : {}),
+        ...(description !== undefined ? { description } : {}),
+        ...(done !== undefined ? { done } : {}),
+        ...(dueDate !== undefined ? { due_date: dueDate } : {}),
+        ...(priority !== undefined ? { priority } : {}),
+        ...(percentDone !== undefined ? { percent_done: percentDone } : {}),
+      };
 
-    return toolResult("Completed task", summarizeTask(response.data));
-  },
-);
+      const response = await vikunjaFetch<JsonRecord>(`/tasks/${taskId}`, {
+        method: "POST",
+        body: JSON.stringify(updatedTask),
+      });
 
-server.registerTool(
-  "add_task_comment",
-  {
-    title: "Add Task Comment",
-    description: "Add a comment to a Vikunja task.",
-    inputSchema: {
-      taskId: z.number().int().positive(),
-      comment: z.string().min(1),
+      return toolResult("Updated task", summarizeTask(response.data));
     },
-    annotations: {
-      destructiveHint: false,
-      idempotentHint: false,
-      openWorldHint: true,
-    },
-  },
-  async ({ taskId, comment }) => {
-    const response = await vikunjaFetch<JsonRecord>(`/tasks/${taskId}/comments`, {
-      method: "PUT",
-      body: JSON.stringify({ comment }),
-    });
+  );
 
-    return toolResult("Created comment", summarizeComment(response.data));
-  },
-);
+  server.registerTool(
+    "complete_task",
+    {
+      title: "Complete Task",
+      description: "Mark a Vikunja task as done.",
+      inputSchema: {
+        taskId: z.number().int().positive(),
+      },
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
+    },
+    async ({ taskId }) => {
+      const existing = await getTask(taskId);
+      const response = await vikunjaFetch<JsonRecord>(`/tasks/${taskId}`, {
+        method: "POST",
+        body: JSON.stringify({
+          ...existing,
+          done: true,
+        }),
+      });
+
+      return toolResult("Completed task", summarizeTask(response.data));
+    },
+  );
+
+  server.registerTool(
+    "add_task_comment",
+    {
+      title: "Add Task Comment",
+      description: "Add a comment to a Vikunja task.",
+      inputSchema: {
+        taskId: z.number().int().positive(),
+        comment: z.string().min(1),
+      },
+      annotations: {
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: true,
+      },
+    },
+    async ({ taskId, comment }) => {
+      const response = await vikunjaFetch<JsonRecord>(`/tasks/${taskId}/comments`, {
+        method: "PUT",
+        body: JSON.stringify({ comment }),
+      });
+
+      return toolResult("Created comment", summarizeComment(response.data));
+    },
+  );
+
+  return server;
+}
+
+function isAuthorized(apiKeyHeader: string | string[] | undefined): boolean {
+  if (typeof apiKeyHeader === "string") {
+    return apiKeyHeader === config.apiKey;
+  }
+
+  return false;
+}
 
 async function main() {
   if (process.env.VIKUNJA_MCP_VALIDATE_ONLY === "1") {
-    console.error(`vikunja-mcp config ok for ${config.baseApiUrl}`);
+    console.error(`vikunja-mcp config ok for ${config.baseApiUrl} on port ${config.port}`);
     return;
   }
 
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  const app = createMcpExpressApp();
+
+  app.get("/healthz", (_req, res) => {
+    res.json({
+      ok: true,
+      name: "vikunja-http",
+      baseApiUrl: config.baseApiUrl,
+    });
+  });
+
+  app.all("/mcp", async (req, res) => {
+    if (!isAuthorized(req.header("x-api-key"))) {
+      res.status(401).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32001,
+          message: "Unauthorized",
+        },
+        id: null,
+      });
+      return;
+    }
+
+    if (req.method !== "POST") {
+      res.status(405).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32000,
+          message: "Method not allowed.",
+        },
+        id: null,
+      });
+      return;
+    }
+
+    const server = createServer();
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined,
+    });
+
+    try {
+      await server.connect(transport);
+      await transport.handleRequest(req, res, req.body);
+      res.on("close", () => {
+        transport.close();
+        void server.close();
+      });
+    } catch (error) {
+      console.error("Error handling MCP request:", error);
+
+      if (!res.headersSent) {
+        res.status(500).json({
+          jsonrpc: "2.0",
+          error: {
+            code: -32603,
+            message: "Internal server error",
+          },
+          id: null,
+        });
+      }
+    }
+  });
+
+  app.listen(config.port, config.host, () => {
+    console.error(`vikunja-mcp listening on http://${config.host}:${config.port}/mcp`);
+  });
 }
 
 main().catch((error) => {

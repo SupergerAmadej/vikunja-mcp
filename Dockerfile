@@ -12,6 +12,7 @@ FROM node:20-alpine AS runtime
 
 WORKDIR /app
 ENV NODE_ENV=production
+EXPOSE 9090
 
 COPY package.json ./
 RUN npm install --omit=dev
