@@ -1,0 +1,22 @@
+{
+  "name": "vikunja-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server for Vikunja, packaged for local and Docker sidecar usage.",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "validate": "npm run build && node --eval \"process.env.VIKUNJA_MCP_VALIDATE_ONLY='1'; import('./dist/index.js')\""
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.3",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2"
+  }
+}

@@ -1,0 +1,18 @@
+services:
+  vikunja:
+    image: vikunja/vikunja:latest
+    container_name: vikunja
+    ports:
+      - "3456:3456"
+
+  vikunja-mcp:
+    build: .
+    container_name: vikunja-mcp
+    environment:
+      VIKUNJA_BASE_URL: http://vikunja:3456
+      VIKUNJA_TOKEN: ${VIKUNJA_TOKEN}
+      VIKUNJA_TIMEOUT_MS: 10000
+    depends_on:
+      - vikunja
+    stdin_open: true
+    tty: false
