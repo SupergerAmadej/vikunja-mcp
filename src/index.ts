@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
+import express from "express";
 import { z } from "zod/v4";
 
 type JsonRecord = Record<string, unknown>;
@@ -533,7 +533,8 @@ async function main() {
     return;
   }
 
-  const app = createMcpExpressApp();
+  const app = express();
+  app.use(express.json({ limit: "1mb" }));
 
   app.get("/healthz", (_req, res) => {
     res.json({
