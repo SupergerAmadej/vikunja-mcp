@@ -311,7 +311,7 @@ function createServer() {
       }
 
       const suffix = query.size > 0 ? `?${query.toString()}` : "";
-      const response = await vikunjaFetch<unknown[]>(`/tasks/all${suffix}`);
+      const response = await vikunjaFetch<unknown[]>(`/tasks${suffix}`);
       const rawTasks = Array.isArray(response.data) ? response.data : [];
       let tasks = rawTasks.map(summarizeTask);
 
