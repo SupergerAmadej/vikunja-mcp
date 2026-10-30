@@ -13,7 +13,8 @@ export function paginationFromHeaders(headers: Headers, pageItemCount: number, r
     result.page = page;
     if (request.perPage !== undefined) result.requestedPerPage = request.perPage;
     const total = result.totalPages;
-    if (typeof total === "number" && !(total === 0 && pageItemCount > 0) && !(page > total && pageItemCount > 0)) {
+    if (typeof total === "number" && !(total === 0 && pageItemCount > 0) && !(page > total && pageItemCount > 0)
+      && !(request.perPage !== undefined && pageItemCount > request.perPage)) {
       result.hasMore = page < total;
       if (page < total) result.nextPage = page + 1;
       result.completeness = page === 1 && total <= 1 ? "complete" : "partial";

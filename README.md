@@ -159,6 +159,9 @@ files need the optional local import mechanism.
 `get_current_user` first calls Vikunja's `/user` endpoint. If a scoped API token
 can perform task CRUD but does not have access to `/user`, the server falls back
 to `VIKUNJA_USER_*` values and then to `/tokens` owner metadata when available.
+Unset optional identity fields and literal `undefined`/`null` placeholders are
+omitted from the configured fallback. The local Compose override leaves email
+unset unless an actual address is provided.
 
 ## Running locally
 
@@ -295,6 +298,16 @@ Missing pagination headers remain unknown rather than being reported as zero.
 Supported `expand` values are `subtasks`, `buckets`, `reactions`, `comments`,
 `comment_count`, `time_entries_count` and `is_unread`; their data is retained in
 task responses. Other names fail validation.
+Scoped tokens additionally need `reactions.read_all` for reactions,
+`time_entries.read_all` for time-entry counts, and `tasks_comments.read_all` for
+comments or comment counts. Missing expansion scopes can return HTTP 401 even
+when a basic task read works.
+
+Task-label listing compensates for the upstream v1 handler ignoring `per_page`:
+MCP reads native pages without that parameter, then applies the requested page
+size and reports stable totals. This scan is bounded to 100 native pages and
+rejects repeated IDs or inconsistent pagination rather than claiming a complete
+label set. Other list endpoints continue to use upstream pagination.
 
 Version **0.2.0** rejects unknown arguments on every tool. Patch tools require at
 least one supported edit; an already-persisted value is still a valid no-op.

@@ -10,4 +10,4 @@ services:
     environment:
       VIKUNJA_USER_ID: ${VIKUNJA_USER_ID:-1}
       VIKUNJA_USERNAME: ${VIKUNJA_USERNAME:-localadmin}
-      VIKUNJA_USER_EMAIL: ${VIKUNJA_USER_EMAIL:-localadmin@localhost.invalid}
+      VIKUNJA_USER_EMAIL: ${VIKUNJA_USER_EMAIL:-}

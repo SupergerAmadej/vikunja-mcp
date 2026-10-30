@@ -20,6 +20,7 @@ beforeEach(()=>{
   api.state.calls=[];api.state.delay=0;api.state.failWrite=false;api.state.beforeWrite=undefined;api.state.pagination={};
   api.state.upload={success:[{id:77,task_id:1,file:{name:'fixture.txt',size:7}}],errors:null};
   api.state.atomicSupport=false;api.state.label={id:1,title:'Original label',description:'Keep label',hex_color:'112233'};
+  api.state.taskLabels=[{id:7,title:'Label'}];api.state.repeatLabelPage=false;api.state.emptyLabelPage=undefined;
 });
 async function call(name,args={}) {
   const response=await mcp.rpc('tools/call',{name,arguments:args});
@@ -370,4 +371,42 @@ test('timeouts become tool errors and current user fallback behavior is retained
     const user=await short.rpc('tools/call',{name:'get_current_user',arguments:{}});
     assert.equal(user.data.result.structuredContent.id,8);assert.equal(user.data.result.structuredContent.source,'environment');
   } finally {await short.close();}
+});
+
+test('task-label pagination compensates for upstream ignoring per_page without losing labels',async()=>{
+  api.state.taskLabels=[{id:7,title:'First'},{id:8,title:'Second'},{id:9,title:'Third'}];
+  for(const [page,ids] of [[1,[7]],[2,[8]],[3,[9]],[4,[]]]) {
+    const result=success(await call('list_task_labels',{taskId:1,page,perPage:1}));
+    assert.deepEqual(result.labels.map(label=>label.id),ids);
+    assert.equal(result.count,ids.length);assert.equal(result.pagination.totalPages,3);
+    assert.equal(result.pagination.hasMore,page<3);
+  }
+  const combined=success(await call('list_task_labels',{taskId:1,page:1,perPage:100}));
+  assert.deepEqual(combined.labels.map(label=>label.id),[7,8,9]);
+  assert.equal(combined.pagination.completeness,'complete');
+  assert.ok(api.state.calls.filter(call=>call.path==='/api/v1/tasks/1/labels').every(call=>!call.query.has('per_page')));
+});
+
+test('repeated task-label pages fail rather than claim a complete collection',async()=>{
+  api.state.taskLabels=[{id:7},{id:8},{id:9}];api.state.repeatLabelPage=true;
+  const result=await call('list_task_labels',{taskId:1,page:1,perPage:100});
+  assert.equal(result.isError,true);assert.match(result.content[0].text,/repeated IDs/);
+});
+
+test('an empty native label page before the reported end is not a complete collection',async()=>{
+  api.state.taskLabels=[{id:7},{id:8},{id:9}];api.state.emptyLabelPage=2;
+  const result=await call('list_task_labels',{taskId:1,page:1,perPage:100});
+  assert.equal(result.isError,true);assert.match(result.content[0].text,/empty page before its reported end/);
+});
+
+test('configured current-user fallback omits placeholder identity fields',async()=>{
+  for(const placeholder of ['undefined','null','  undefined  ']) {
+    const configured=await startMcp(api.url,{VIKUNJA_USER_ID:'8',VIKUNJA_USERNAME:'configured',VIKUNJA_USER_NAME:placeholder,VIKUNJA_USER_EMAIL:placeholder});
+    try {
+      const response=await configured.rpc('tools/call',{name:'get_current_user',arguments:{}});
+      const user=success(response.data.result);
+      assert.equal(user.id,8);assert.equal(user.username,'configured');assert.equal(user.source,'environment');
+      assert.equal(Object.hasOwn(user,'name'),false);assert.equal(Object.hasOwn(user,'email'),false);
+    } finally {await configured.close();}
+  }
 });

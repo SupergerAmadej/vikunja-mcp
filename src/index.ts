@@ -160,10 +160,14 @@ function summarizeUser(user: unknown): JsonRecord {
 }
 
 function summarizeConfiguredUser(): JsonRecord | undefined {
+  const identityValue = (value?: string) => {
+    const trimmed = value?.trim();
+    return trimmed && !["undefined", "null"].includes(trimmed) ? trimmed : undefined;
+  };
   const userId = Number(process.env.VIKUNJA_USER_ID ?? "");
-  const username = process.env.VIKUNJA_USERNAME?.trim();
-  const name = process.env.VIKUNJA_USER_NAME?.trim();
-  const email = process.env.VIKUNJA_USER_EMAIL?.trim();
+  const username = identityValue(process.env.VIKUNJA_USERNAME);
+  const name = identityValue(process.env.VIKUNJA_USER_NAME);
+  const email = identityValue(process.env.VIKUNJA_USER_EMAIL);
   const user: JsonRecord = {};
 
   if (Number.isInteger(userId) && userId > 0) {
@@ -427,22 +431,50 @@ async function updateProjectObject(projectId: number, changes: JsonRecord) {
 }
 
 async function getTaskLabels(taskId: number, params?: { page?: number; perPage?: number }) {
-  const query = new URLSearchParams();
-
-  if (params?.page) {
-    query.set("page", String(params.page));
+  // The v1 task-label handler ignores per_page for its SQL limit but uses it
+  // for pagination headers. Read native pages without that parameter, then
+  // apply the MCP page size to the complete collection.
+  const labels: JsonRecord[] = [];
+  const seen = new Set<unknown>();
+  let nativePageSize = 50;
+  let nativeTotalPages: number | undefined;
+  for (let nativePage = 1; nativePage <= 100; nativePage++) {
+    const response = await vikunjaFetch<unknown[]>(`/tasks/${taskId}/labels?page=${nativePage}`);
+    if (!Array.isArray(response.data)) throw new Error("Vikunja returned an invalid task-label list.");
+    if (nativePage === 1 && response.data.length > 0) nativePageSize = response.data.length;
+    for (const value of response.data) {
+      const label = summarizeLabel(value);
+      if (!Number.isSafeInteger(label.id) || Number(label.id) <= 0 || seen.has(label.id)) {
+        throw new Error("Task-label pagination returned invalid or repeated IDs; the complete label set could not be verified.");
+      }
+      seen.add(label.id);
+      labels.push(label);
+    }
+    const nativePagination = paginationFromHeaders(response.headers, response.data.length, { page: nativePage });
+    const reportedPages = nativePagination.totalPages;
+    if (typeof reportedPages === "number") {
+      if ((nativeTotalPages !== undefined && nativeTotalPages !== reportedPages)
+        || (response.data.length > 0 && (reportedPages === 0 || nativePage > reportedPages))) {
+        throw new Error("Task-label pagination changed or returned inconsistent totals; the complete label set could not be verified.");
+      }
+      nativeTotalPages = reportedPages;
+    }
+    if (response.data.length === 0 && nativeTotalPages !== undefined && nativePage <= nativeTotalPages
+      && !(nativePage === 1 && nativeTotalPages === 1)) {
+      throw new Error("Task-label pagination returned an empty page before its reported end; the complete label set could not be verified.");
+    }
+    if (response.data.length === 0 || nativePagination.hasMore === false) {
+      const page = params?.page ?? 1;
+      const perPage = params?.perPage ?? nativePageSize;
+      const selected = labels.slice((page - 1) * perPage, page * perPage);
+      const headers = new Headers({
+        "X-Pagination-Total-Pages": String(Math.ceil(labels.length / perPage)),
+        "X-Pagination-Result-Count": String(selected.length),
+      });
+      return { labels: selected, pagination: paginationFromHeaders(headers, selected.length, params ?? {}) };
+    }
   }
-
-  if (params?.perPage) {
-    query.set("per_page", String(params.perPage));
-  }
-
-  const suffix = query.size > 0 ? `?${query.toString()}` : "";
-  const response = await vikunjaFetch<unknown[]>(`/tasks/${taskId}/labels${suffix}`);
-  return {
-    labels: Array.isArray(response.data) ? response.data.map(summarizeLabel) : [],
-    pagination: paginationFromHeaders(response.headers, Array.isArray(response.data) ? response.data.length : 0, params ?? {}),
-  };
+  throw new Error("Task-label pagination exceeded 100 backend pages; the complete label set could not be verified.");
 }
 
 async function getLabels(params?: { page?: number; perPage?: number; search?: string }) {

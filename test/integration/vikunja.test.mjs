@@ -123,6 +123,20 @@ test('Vikunja 2.7.1 API contracts and persistence', {skip:!process.env.TEST_VIKU
       assert.equal(expanded.subtasks[0].id,relationTask.id);assert.equal(expanded.comments[0].comment,'Integration comment');assert.equal(expanded.comment_count,1);
       const identifier=await call('get_task_by_identifier',{identifier:task.identifier,expand:['comments']});assert.equal(identifier.id,taskId);assert.equal(identifier.comments.length,1);
     });
+    await t.test('task labels honor page size and keep stable totals on an empty page',async()=>{
+      const labels=[];
+      for(const title of ['Pagination first','Pagination second']) {
+        const label=await call('create_label',{title});labels.push(label);
+        await call('add_task_label',{taskId,labelId:label.id});
+      }
+      for(const [page,expected] of [[1,[labels[0].id]],[2,[labels[1].id]],[3,[]]]) {
+        const result=await call('list_task_labels',{taskId,page,perPage:1});
+        assert.deepEqual(result.labels.map(label=>label.id),expected);
+        assert.equal(result.pagination.totalPages,2);assert.equal(result.pagination.hasMore,page<2);
+      }
+      await call('replace_task_labels',{taskId,labelIds:[]});
+      for(const label of labels) await call('delete_label',{labelId:label.id});
+    });
     let attachmentId;
     await t.test('uploads and view positions use the real response contracts',async()=>{
       const upload=await call('upload_task_attachment',{taskId,filename:'integration.txt',contentBase64:Buffer.from('fixture content').toString('base64')});

@@ -65,6 +65,7 @@ export async function fixture() {
     label:{id:1,title:'Original label',description:'Keep label',hex_color:'112233'},atomicSupport:false,
     calls:[],upload:{success:[{id:77,task_id:1,file:{name:'fixture.txt',size:7}}],errors:null},
     beforeWrite:undefined, failWrite:false, reads:0, delay:0, pagination:{},
+    taskLabels:[{id:7,title:'Label'}], repeatLabelPage:false, emptyLabelPage:undefined,
   };
   const service=await listen(async (req,res)=>{
     const chunks=[]; for await(const chunk of req) chunks.push(chunk);
@@ -104,6 +105,15 @@ export async function fixture() {
       const snapshot=structuredClone({...state.task,labels:[{id:7,title:'Label'}],subtasks:[{id:2,title:'Child'}],time_entries_count:3,comment_count:1,comments:[{id:3,comment:'Hi'}],is_unread:false,buckets:[],reactions:{}});
       await new Promise(resolve=>setTimeout(resolve,state.delay));
       return send(snapshot);
+    }
+    if(url.pathname==='/api/v1/tasks/1/labels' && req.method==='GET') {
+      // Match the upstream bug: SQL uses its configured page size (2 here),
+      // while the response headers use the requested per_page value.
+      const page=Number(url.searchParams.get('page')??1),perPage=Number(url.searchParams.get('per_page')??2);
+      const items=state.emptyLabelPage===page?[]:state.repeatLabelPage?state.taskLabels.slice(0,2):state.taskLabels.slice((page-1)*2,page*2);
+      res.setHeader('X-Pagination-Total-Pages',String(Math.ceil(state.taskLabels.length/perPage)));
+      res.setHeader('X-Pagination-Result-Count',String(items.length));
+      return send(items);
     }
     if(url.pathname==='/api/v1/projects/1' && req.method==='GET') {
       const snapshot=structuredClone(state.project);

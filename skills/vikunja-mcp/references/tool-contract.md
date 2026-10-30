@@ -37,6 +37,18 @@ arbitrary backend fields. Perform supported follow-up steps when requested.
 `comment_count`, `time_entries_count`, and `is_unread`. Expansions do not add
 mutation capabilities or establish complete global search coverage.
 
+Request only the expansions needed for the task. Scoped tokens need
+`reactions.read_all` for `reactions`, `time_entries.read_all` for
+`time_entries_count`, and `tasks_comments.read_all` for `comments` or
+`comment_count`, in addition to permission for the task read. These are backend
+token scopes, not extra tool arguments. A 401/403 on an expansion can therefore
+occur while a basic task read still works; it does not establish token expiry.
+Retry the same read without optional expansions to establish basic access, then
+isolate required expansions if necessary. Report unavailable data when it affects
+the answer and identify the relevant read scope; do not change token permissions
+as part of ordinary task work. A successful read may omit expansion fields, so
+absence alone does not establish an empty collection or a zero count.
+
 ## Dates, reminders and repetition
 
 Use an explicit timezone/offset when turning calendar language into a timestamp.
@@ -83,13 +95,30 @@ the actual schema rather than passing paging keys everywhere. The backend may
 cap the requested page size. `completeness` describes one response; combining
 every page from the first through the last can establish full requested coverage.
 
+`list_task_labels` collects native backend pages before applying the requested
+MCP page size. This compensates for the v1 handler ignoring `per_page` and keeps
+`totalPages` stable even for a requested page beyond the end. The scan is bounded
+to 100 native pages; invalid or repeated IDs, inconsistent totals, an early empty
+page, or exceeding that bound cause a tool error rather than a claim of full
+coverage. Do not replace a collection while claiming to preserve unseen members
+when listing failed. On older deployed builds or other endpoints, still check
+that item counts and continuation metadata agree and report uncertain coverage
+when they conflict.
+
 There are no tool arguments for arbitrary due-date/label/assignee filters, no
-user search or project-member directory, no project-view/bucket discovery and
-no bucket-move tool. `get_current_user` can resolve "me"; it cannot resolve a
-colleague by name. Obtain a verified user ID from the user or another already
-authorized source. Do not guess it or discover it by reading credentials.
+user search or project-member directory, no dedicated project-view/bucket listing,
+and no bucket-move tool. `get_current_user` can resolve "me"; it cannot resolve a
+colleague by name. Its `source` and `note` distinguish an API user response from
+configured or token-owner fallback metadata. The MCP fallback omits unset or
+placeholder optional fields. Do not describe configured fields as API-verified
+or invent an email address when it is absent.
+Obtain a verified user ID from the user or another already authorized source.
+Do not guess it or discover it by reading credentials.
 
 `set_task_position` requires `taskId`, `projectViewId` and a numeric position.
+`get_task` with `expand: ["buckets"]` may expose `project_view_id` in bucket
+metadata. Reuse that verified ID only when it
+identifies the intended view; this does not enumerate all views or their names.
 Do not infer the view from a project ID or promise a named board move. An
 identifier such as `OPS-17` is not necessarily numeric task ID 17.
 

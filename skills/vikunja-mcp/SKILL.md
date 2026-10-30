@@ -18,7 +18,8 @@ ask only when missing information changes the target or intended action.
   and the target is unclear, resolve that ambiguity before accessing task data.
 - Use `vikunja_health` when establishing or diagnosing a connection, not before
   every call. Use `get_current_user` when the request depends on the current user;
-  a configured fallback identity is not a searchable user directory.
+  retain its reported source and treat missing or placeholder identity fields as
+  unknown. A configured fallback identity is not a searchable user directory.
 - Reuse verified IDs. For a human task identifier use `get_task_by_identifier`.
   Otherwise narrow `list_projects`, `list_tasks` or `list_labels`, following the
   relevant pages. Do not select the first of multiple matching names or create
@@ -65,7 +66,10 @@ response does not contain the earlier pages.
 
 If pagination metadata is unknown, continue through supported page controls until
 an empty page, or state the scan's limit. Stop and report incomplete coverage if
-the endpoint repeats pages, cannot continue, or the user's bound is reached.
+the endpoint repeats pages, its metadata contradicts the returned items, it cannot
+continue, or the user's bound is reached. See the
+[pagination limits](references/tool-contract.md#pagination-and-discovery-gaps)
+for task-label collection bounds.
 Endpoints without paging controls do not justify an exhaustive claim. Filter
 the retrieved set locally only when no supported tool filter exists, and retain
 its coverage limits in the answer.
@@ -84,6 +88,9 @@ its coverage limits in the answer.
 - A permission error or missing capability is a real limit. Do not switch
   instances, read credential files, call undocumented APIs or disable atomic
   protection to work around it. Report the blocked operation and what is needed.
+  For a failed optional task expansion, the
+  [contract notes](references/tool-contract.md#choose-an-operation) explain how
+  to check the basic read while preserving the missing-data limit.
 
 Report the affected IDs/identifiers, the confirmed outcome and any failed steps.
 For reviews, include the project/status/date scope and whether coverage is full
