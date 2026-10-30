@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vikunja MCP"
+  short_description: "Manage Vikunja tasks through connected MCP tools"
+  default_prompt: "Use $vikunja-mcp to find, organize, and update my tasks in the selected Vikunja instance."

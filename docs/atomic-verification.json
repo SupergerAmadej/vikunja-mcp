@@ -1,0 +1,86 @@
+{
+  "checkedAt": "2026-10-30T14:40:16.007213+00:00",
+  "mcpVersion": "0.2.1",
+  "sourceCommit": "5619c4a9f66ddfc13f7bbba24ada07c3e82ae7a0",
+  "sourceArchiveSha256": "d67103c770a5289a74eebf5abad73e3278cb930ed5360c6b3814962babb54eab",
+  "patchSha256": "30ab6c1c741974d7ce76722c3a34604c7c53bf6c97d645518f56999240655321",
+  "toolSchemaSha256": "29e3884bb212eae8979e81047bb741ff0f484f0e353820421c51fe63c32d2f97",
+  "sourceFiles": {
+    "src/atomic-updates.ts": "7cdc409bfa83a4436b7e8e70c75eabc453efb3961ee03e49bc7ae9ef0b131716",
+    "src/config.ts": "ed3159ae9495b50eb1ff1ecef589d264951742502d38fcd9a2cb54854da09973",
+    "src/index.ts": "d0c15cb2652fd1fee335156911e3c88dbd61101070568390399804b4c4e9f4b1",
+    "src/pagination.ts": "64ad86cd84d195e3e88a4b179bd24a2017edbee938edefde4661cbc8105737b0",
+    "src/tool-inputs.ts": "3d9a93a0f69770d8fa77f41552b6712c3723b63f9dafb34461c5ec5357c642b2",
+    "src/updates.ts": "aac0e6b50d26c7424c646994cb7c3d185adf5e7a849a0192f684cce13de50a0e",
+    "src/uploads.ts": "9ca9053385825499ef2cfa8e33b4da170c98d7e0f12fbc47074f41cac4a4e220",
+    "package-lock.json": "6c07b0155835f10d3551bdec4540c31ed829771a9c262e5523fc1d3a10dabba2",
+    ".github/workflows/ci.yml": "adb1380b036b1f9c618498e576ac9c51ffa677584ffb881e61f9f4300ee6c865",
+    "Dockerfile": "520b3c8678ad9ef6a3150e311ecd2253b3fdc1abf3a7c66832bfc0f780d25caa",
+    "docker-compose.example.yml": "1a530cfa09cfe9f94980aa2b48c1734bab5a04da06c25d670db6727c542dd16d",
+    "upstream/vikunja.Dockerfile": "313486d83dce42ce14c0ef3b82029efc4435d45d5857b0356ee7988da89392e6",
+    "upstream/atomic-fields.Dockerfile": "d0d0b265d377c7797b50e451946f20b1fbe3c37d79d58153337a77e8dbd23752",
+    "upstream/prepare-source.mjs": "a5ee2ee026021924398e98c5fb6afc7053815d357d26c224873283f717a46d14",
+    "upstream/vikunja-2.7.1-atomic-fields.json": "18df3c42d0ba885ea4adae922e54b0bc7dd2ec771fac0675a2dd5a21aa6ef2f5",
+    "upstream/vikunja-2.7.1-atomic-fields.patch": "30ab6c1c741974d7ce76722c3a34604c7c53bf6c97d645518f56999240655321",
+    "scripts/test-upstream-atomic.mjs": "570c25c3a1d45b67a00b62a8bdef70698935c24e33b1bf6643e659c36e9586d9",
+    "scripts/test-integration.mjs": "8c684e5f2a3c4f413d3a660d36d62b14560bc348d3155a6777ae73ebb944e3d0",
+    "scripts/test-stack.mjs": "d3f2ad8c82bd097b311d368454846ca7d2519ebdc3fdc57d38a85d846e49afec",
+    "test/server.test.mjs": "251eb2787c2438bb05b44eadba45a32211a9ee9442c7977d03d7d3eb2b986998",
+    "test/integration/vikunja.test.mjs": "712c8d8b3117378b4c3f8b9b5987bcfc20ccc75c2be8106b1167e895bf905e32"
+  },
+  "verification": {
+    "mcpRegression": {
+      "windows": 47,
+      "linux": 47
+    },
+    "stockIntegration": {
+      "windows": 11,
+      "linux": 11
+    },
+    "atomicIntegration": {
+      "platform": "linux-amd64",
+      "requiredAtomic": true,
+      "scenarios": 9,
+      "totalTests": 10,
+      "passed": 10,
+      "failed": 0
+    },
+    "negativeControl": "Stock 2.7.1 passes scalar collection preservation and reproduces the three remaining reminder/project/label replacement failures",
+    "upstream": "Model and HTTP tests passed, including atomic permissions, inherited access, reparenting, account-deletion shares, Kanban updates, webhook creator access and API-token scopes",
+    "productionContainer": "uid 1000, read-only root, dropped capabilities, liveness and 42 tools passed",
+    "productionStack": {
+      "checkedAt": "2026-10-30T14:38:32.602Z",
+      "backendVersion": "2.7.1+atomic-fields.1",
+      "atomicProtocol": 1,
+      "frontendAssets": 52,
+      "correspondingSource": true,
+      "scopedTokenWrites": true,
+      "readOnlyTokenDenied": true,
+      "staleSnapshotPreserved": true,
+      "persistenceAfterRecreation": true,
+      "attachmentPersistence": true,
+      "nonRoot": true,
+      "readOnlyRoot": true,
+      "tools": 42,
+      "liveDeploymentChanged": false
+    },
+    "npmAuditVulnerabilities": 0,
+    "compressedRequestRegression": "Valid and malformed gzip requests rejected with 415; unauthorized requests rejected before parsing; subsequent request succeeds"
+  },
+  "proofLogs": {
+    ".tmp/security-upgrade/regression.log": "a203248c3c889e7d747aeeda893c096589793eac0142a1e685ac3e4b6a332e62",
+    ".tmp/security-upgrade/integration-windows.log": "509635307be0aace87e687629c30e45dd794e7b5b73b3e3d16935400e94a9833",
+    ".tmp/security-upgrade/linux.log": "93535b1b36aaa6888ff032b80aa14eeb42cf955209859cfd0a60f72920771ff2",
+    ".tmp/security-upgrade/atomic-security.log": "013de004197e08a0f802ef853ed911545c1955c5aac4d8013fe9b3fe4937041b",
+    ".tmp/security-upgrade/container.log": "086f551f0e254a501c812010e636ae7ec4a610024856b289e8b49738188158d1",
+    ".tmp/security-upgrade/stack-final.log": "9991a37ce5a2028aee2b7cf6a84a4dcb178f2552b8704990f0dc70f82536d4cd",
+    ".tmp/security-upgrade/npm-audit.json": "2eaa74295ec58383aeedb1cb70e8b046011a4d449f5529bfb4825637a689c05a"
+  },
+  "atomicProofLogs": {
+    "negative-control.tap": "98939aca722cdfa20d49623f7e749d8305aafae321ffe1bf4feb29a82e2298af",
+    "patched.tap": "10f2679b24326eebd225dfc0433fd336c3c153b8bafc220cc98bf5db59f3e3ab",
+    "native-tests.log": "de6af6b408112b248a621cc18fee1b571321ec7eb115b8174a8ad3849d1f8112"
+  },
+  "deploymentChanged": false,
+  "priorEvidence": "atomic-verification-2026-10-20.json"
+}

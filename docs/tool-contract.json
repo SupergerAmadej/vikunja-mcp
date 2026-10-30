@@ -1,0 +1,1609 @@
+{
+  "server": {
+    "name": "vikunja-http",
+    "version": "0.2.1"
+  },
+  "schemaSha256": "29e3884bb212eae8979e81047bb741ff0f484f0e353820421c51fe63c32d2f97",
+  "tools": [
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Add a comment to a Vikunja task.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "comment": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId",
+          "comment"
+        ],
+        "type": "object"
+      },
+      "name": "add_task_comment",
+      "title": "Add Task Comment"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Associate an existing label with a task.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "labelId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId",
+          "labelId"
+        ],
+        "type": "object"
+      },
+      "name": "add_task_label",
+      "title": "Add Task Label"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Complete a Vikunja task. A recurring task may immediately reopen with its next dates; the returned state is authoritative. Do not blindly retry after a timeout.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "type": "object"
+      },
+      "name": "complete_task",
+      "title": "Complete Task"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Create a new Vikunja label.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "hexColor": {
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "type": "object"
+      },
+      "name": "create_label",
+      "title": "Create Label"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Create a new Vikunja project.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "hexColor": {
+            "type": "string"
+          },
+          "identifier": {
+            "type": "string"
+          },
+          "isFavorite": {
+            "type": "boolean"
+          },
+          "title": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "type": "object"
+      },
+      "name": "create_project",
+      "title": "Create Project"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Mark one task as a subtask of another using Vikunja's documented task relation kind.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "parentTaskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "subtaskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "parentTaskId",
+          "subtaskId"
+        ],
+        "type": "object"
+      },
+      "name": "create_subtask_relation",
+      "title": "Create Subtask Relation"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Create a new task in a Vikunja project.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "dueDate": {
+            "description": "RFC3339 timestamp with Z or an explicit UTC offset; normalized to UTC. Date-only values are not accepted.",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+            "type": "string"
+          },
+          "priority": {
+            "maximum": 5,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "projectId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "title": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "projectId",
+          "title"
+        ],
+        "type": "object"
+      },
+      "name": "create_task",
+      "title": "Create Task"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Create a relation between two tasks.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "otherTaskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "relationKind": {
+            "enum": [
+              "subtask",
+              "parenttask",
+              "related",
+              "duplicateof",
+              "duplicates",
+              "blocking",
+              "blocked",
+              "precedes",
+              "follows",
+              "copiedfrom",
+              "copiedto"
+            ],
+            "type": "string"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId",
+          "otherTaskId",
+          "relationKind"
+        ],
+        "type": "object"
+      },
+      "name": "create_task_relation",
+      "title": "Create Task Relation"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Delete a Vikunja label.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "labelId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "labelId"
+        ],
+        "type": "object"
+      },
+      "name": "delete_label",
+      "title": "Delete Label"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Delete a Vikunja project.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "projectId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "projectId"
+        ],
+        "type": "object"
+      },
+      "name": "delete_project",
+      "title": "Delete Project"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Delete a Vikunja task.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "type": "object"
+      },
+      "name": "delete_task",
+      "title": "Delete Task"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Delete a task attachment.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "attachmentId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId",
+          "attachmentId"
+        ],
+        "type": "object"
+      },
+      "name": "delete_task_attachment",
+      "title": "Delete Task Attachment"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Delete a task comment.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "commentId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId",
+          "commentId"
+        ],
+        "type": "object"
+      },
+      "name": "delete_task_comment",
+      "title": "Delete Task Comment"
+    },
+    {
+      "annotations": {
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Fetch the Vikunja user associated with the configured API token.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+      },
+      "name": "get_current_user",
+      "title": "Get Current User"
+    },
+    {
+      "annotations": {
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Fetch one Vikunja project by id.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "projectId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "projectId"
+        ],
+        "type": "object"
+      },
+      "name": "get_project",
+      "title": "Get Project"
+    },
+    {
+      "annotations": {
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Fetch one Vikunja task by id.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "expand": {
+            "items": {
+              "enum": [
+                "subtasks",
+                "buckets",
+                "reactions",
+                "comments",
+                "comment_count",
+                "time_entries_count",
+                "is_unread"
+              ],
+              "type": "string"
+            },
+            "maxItems": 7,
+            "type": "array"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "type": "object"
+      },
+      "name": "get_task",
+      "title": "Get Task"
+    },
+    {
+      "annotations": {
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Fetch one Vikunja task by human-facing identifier like PROJ-123.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "expand": {
+            "items": {
+              "enum": [
+                "subtasks",
+                "buckets",
+                "reactions",
+                "comments",
+                "comment_count",
+                "time_entries_count",
+                "is_unread"
+              ],
+              "type": "string"
+            },
+            "maxItems": 7,
+            "type": "array"
+          },
+          "identifier": {
+            "description": "Full project-prefix/task-index identifier, such as 9TEAM-12. Numeric-only project prefixes require project-list permission for safe resolution.",
+            "maxLength": 37,
+            "minLength": 3,
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier"
+        ],
+        "type": "object"
+      },
+      "name": "get_task_by_identifier",
+      "title": "Get Task By Identifier"
+    },
+    {
+      "annotations": {
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "List labels accessible to the current Vikunja token.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "perPage": {
+            "exclusiveMinimum": 0,
+            "maximum": 100,
+            "type": "integer"
+          },
+          "search": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "name": "list_labels",
+      "title": "List Labels"
+    },
+    {
+      "annotations": {
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "List Vikunja projects available to the current token.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "perPage": {
+            "exclusiveMinimum": 0,
+            "maximum": 100,
+            "type": "integer"
+          },
+          "search": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "name": "list_projects",
+      "title": "List Projects"
+    },
+    {
+      "annotations": {
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "List subtasks of a task using Vikunja's task expansion support.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "type": "object"
+      },
+      "name": "list_subtasks",
+      "title": "List Subtasks"
+    },
+    {
+      "annotations": {
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "List assignees on a task.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "perPage": {
+            "exclusiveMinimum": 0,
+            "maximum": 100,
+            "type": "integer"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "type": "object"
+      },
+      "name": "list_task_assignees",
+      "title": "List Task Assignees"
+    },
+    {
+      "annotations": {
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "List attachments on a task.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "perPage": {
+            "exclusiveMinimum": 0,
+            "maximum": 100,
+            "type": "integer"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "type": "object"
+      },
+      "name": "list_task_attachments",
+      "title": "List Task Attachments"
+    },
+    {
+      "annotations": {
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "List comments on a task.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "orderBy": {
+            "enum": [
+              "asc",
+              "desc"
+            ],
+            "type": "string"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "type": "object"
+      },
+      "name": "list_task_comments",
+      "title": "List Task Comments"
+    },
+    {
+      "annotations": {
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "List labels associated with a Vikunja task.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "perPage": {
+            "exclusiveMinimum": 0,
+            "maximum": 100,
+            "type": "integer"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "type": "object"
+      },
+      "name": "list_task_labels",
+      "title": "List Task Labels"
+    },
+    {
+      "annotations": {
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Inspect related tasks grouped by relation kind for a task.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "type": "object"
+      },
+      "name": "list_task_relations",
+      "title": "List Task Relations"
+    },
+    {
+      "annotations": {
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "List tasks with project and completion filters applied before pagination. Defaults to open tasks. Results are one page; pagination.pageItemCount counts this page, never all matches. Check completeness/hasMore before claiming a full review.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "includeDone": {
+            "description": "false/omitted returns open tasks; true returns both open and completed tasks.",
+            "type": "boolean"
+          },
+          "page": {
+            "description": "One-based page number; defaults to 1.",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "perPage": {
+            "description": "Requested page size, 1-100. Vikunja may apply a smaller configured maximum.",
+            "exclusiveMinimum": 0,
+            "maximum": 100,
+            "type": "integer"
+          },
+          "projectId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "search": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "name": "list_tasks",
+      "title": "List Tasks"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Move a task to another Vikunja project by updating its project_id.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "projectId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId",
+          "projectId"
+        ],
+        "type": "object"
+      },
+      "name": "move_task_to_project",
+      "title": "Move Task To Project"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Remove the subtask relation between a parent task and subtask.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "parentTaskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "subtaskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "parentTaskId",
+          "subtaskId"
+        ],
+        "type": "object"
+      },
+      "name": "remove_subtask_relation",
+      "title": "Remove Subtask Relation"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Remove a label from a task.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "labelId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId",
+          "labelId"
+        ],
+        "type": "object"
+      },
+      "name": "remove_task_label",
+      "title": "Remove Task Label"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Remove a relation between two tasks.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "otherTaskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "relationKind": {
+            "enum": [
+              "subtask",
+              "parenttask",
+              "related",
+              "duplicateof",
+              "duplicates",
+              "blocking",
+              "blocked",
+              "precedes",
+              "follows",
+              "copiedfrom",
+              "copiedto"
+            ],
+            "type": "string"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId",
+          "otherTaskId",
+          "relationKind"
+        ],
+        "type": "object"
+      },
+      "name": "remove_task_relation",
+      "title": "Remove Task Relation"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Replace the effective label set on a task using Vikunja's bulk task-label update endpoint.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "labelIds": {
+            "items": {
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId",
+          "labelIds"
+        ],
+        "type": "object"
+      },
+      "name": "replace_task_labels",
+      "title": "Replace Task Labels"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Replace the assignee set on a task.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "userIds": {
+            "items": {
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "type": "integer"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "taskId",
+          "userIds"
+        ],
+        "type": "object"
+      },
+      "name": "set_task_assignees",
+      "title": "Set Task Assignees"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Set or clear a task due date.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "dueDate": {
+            "anyOf": [
+              {
+                "description": "RFC3339 timestamp with Z or an explicit UTC offset; normalized to UTC. Date-only values are not accepted.",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Due timestamp with UTC offset, or null to clear it."
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId",
+          "dueDate"
+        ],
+        "type": "object"
+      },
+      "name": "set_task_due_date",
+      "title": "Set Task Due Date"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Set a task position for manual ordering within a specific project view.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "position": {
+            "type": "number"
+          },
+          "projectViewId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId",
+          "position",
+          "projectViewId"
+        ],
+        "type": "object"
+      },
+      "name": "set_task_position",
+      "title": "Set Task Position"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Replace all task reminders; [] clears them. Each item must be either an absolute timestamp or a relative base date plus signed seconds, never both. Relative reminders require that task date to be set. Maximum 100 reminders.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "reminders": {
+            "description": "Complete replacement set of absolute or relative reminders; [] clears the collection.",
+            "items": {
+              "anyOf": [
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "reminder": {
+                      "description": "RFC3339 timestamp with Z or an explicit UTC offset; normalized to UTC. Date-only values are not accepted.",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "reminder"
+                  ],
+                  "type": "object"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {
+                    "relativePeriodSeconds": {
+                      "description": "Signed seconds from the base date; negative is before it, zero is at it. Maximum magnitude: ten years.",
+                      "maximum": 315360000,
+                      "minimum": -315360000,
+                      "type": "integer"
+                    },
+                    "relativeTo": {
+                      "description": "Existing task date used as the reminder base.",
+                      "enum": [
+                        "due_date",
+                        "start_date",
+                        "end_date"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "relativeTo",
+                    "relativePeriodSeconds"
+                  ],
+                  "type": "object"
+                }
+              ]
+            },
+            "maxItems": 100,
+            "type": "array"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId",
+          "reminders"
+        ],
+        "type": "object"
+      },
+      "name": "set_task_reminders",
+      "title": "Set Task Reminders"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Set or disable task repetition. Prefer mode: none, interval, monthly or fromCompletion. Legacy numeric modes remain supported. A zero interval without explicit monthly mode disables repetition. Completing a repeating task may reopen and reschedule it.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "description": "Semantic repeat mode. none clears repetition; monthly ignores the interval; interval/fromCompletion require a positive interval.",
+            "enum": [
+              "none",
+              "interval",
+              "monthly",
+              "fromCompletion"
+            ],
+            "type": "string"
+          },
+          "repeatAfterSeconds": {
+            "description": "Repeat interval in seconds, at most ten years. Without mode, zero disables repetition unless repeatMode is explicitly monthly (1).",
+            "maximum": 315360000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "repeatMode": {
+            "description": "Legacy numeric mode: 0 interval, 1 monthly, 2 from current date. Do not combine with mode.",
+            "maximum": 2,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "type": "object"
+      },
+      "name": "set_task_repeat",
+      "title": "Set Task Repeat"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Update selected label fields, preferring advertised atomic field updates. At least one supported edit is required.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "hexColor": {
+            "type": "string"
+          },
+          "labelId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "title": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "labelId"
+        ],
+        "type": "object"
+      },
+      "name": "update_label",
+      "title": "Update Label"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Update selected project fields, preferring advertised atomic field updates. At least one field is required. Stock Vikunja 2.7.0 cannot clear a non-empty description; without the extension that request fails before writing.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "hexColor": {
+            "type": "string"
+          },
+          "identifier": {
+            "type": "string"
+          },
+          "isArchived": {
+            "type": "boolean"
+          },
+          "isFavorite": {
+            "type": "boolean"
+          },
+          "parentProjectId": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "projectId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "title": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "projectId"
+        ],
+        "type": "object"
+      },
+      "name": "update_project",
+      "title": "Update Project"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Update selected task fields, preferring advertised atomic field updates. Requires at least one supported edit. The stock v1 fallback preserves unrelated scalar columns but has cross-client collection replacement limits.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "done": {
+            "type": "boolean"
+          },
+          "dueDate": {
+            "anyOf": [
+              {
+                "description": "RFC3339 timestamp with Z or an explicit UTC offset; normalized to UTC. Date-only values are not accepted.",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Due timestamp with UTC offset, or null to clear it."
+          },
+          "percentDone": {
+            "description": "Completion percentage from 0 to 100. Responses use the API percent_done fraction from 0 to 1.",
+            "maximum": 100,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "priority": {
+            "maximum": 5,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "title": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "taskId"
+        ],
+        "type": "object"
+      },
+      "name": "update_task",
+      "title": "Update Task"
+    },
+    {
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Update an existing task comment.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "comment": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "commentId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId",
+          "commentId",
+          "comment"
+        ],
+        "type": "object"
+      },
+      "name": "update_task_comment",
+      "title": "Update Task Comment"
+    },
+    {
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": true
+      },
+      "description": "Upload an attachment to a task from base64 content or a server-local file path.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {
+          "contentBase64": {
+            "type": "string"
+          },
+          "filename": {
+            "maxLength": 255,
+            "minLength": 1,
+            "pattern": "^[^\\\\/\\x00]+$",
+            "type": "string"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "serverFilePath": {
+            "type": "string"
+          },
+          "taskId": {
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "taskId",
+          "filename"
+        ],
+        "type": "object"
+      },
+      "name": "upload_task_attachment",
+      "title": "Upload Task Attachment"
+    },
+    {
+      "annotations": {
+        "idempotentHint": true,
+        "openWorldHint": true,
+        "readOnlyHint": true
+      },
+      "description": "Verify that the configured Vikunja API token and base URL work.",
+      "execution": {
+        "taskSupport": "forbidden"
+      },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "properties": {},
+        "type": "object"
+      },
+      "name": "vikunja_health",
+      "title": "Vikunja Health"
+    }
+  ]
+}

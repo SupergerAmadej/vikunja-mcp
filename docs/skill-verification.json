@@ -1,0 +1,43 @@
+{
+  "checkedAt": "2026-10-21T01:56:53.036589+02:00",
+  "skillName": "vikunja-mcp",
+  "mcpVersion": "0.2.1",
+  "toolSchemaSha256": "29e3884bb212eae8979e81047bb741ff0f484f0e353820421c51fe63c32d2f97",
+  "sourceFiles": {
+    "agents/openai.yaml": "e76d5118bbc165e604b47fd77e8f8325972fe1fdc98a5f117aebf23fe68dbda1",
+    "references/tool-contract.md": "f90e4de1a02bc8b57daf06ad0c722467f9a45e0b59e98ea07f98a1304d3585b6",
+    "references/workflows.md": "78e6487589f4d39fd9a456fdf56c6c09e06cb21564ad64fe2815350572b55091",
+    "SKILL.md": "bf451f5d2f412e1f52d92db057e324fcce134df72c9f1003e8459578e320e3dd"
+  },
+  "installations": [
+    "~/.codex/skills/vikunja-mcp",
+    "~/.claude/skills/vikunja-mcp"
+  ],
+  "installationPathsRedacted": true,
+  "installedCopiesMatchSource": true,
+  "connectionSettingsUnchanged": true,
+  "structuralValidation": "Skill Creator quick_validate.py passed using Python 3.14 with PyYAML 6.0.3",
+  "schemaAndBundleTests": {
+    "passed": 3,
+    "failed": 0
+  },
+  "offlineForwardTest": {
+    "cases": 4,
+    "schemaValidCalls": 13,
+    "stateScopeAssertions": "passed",
+    "liveTaskWrites": false
+  },
+  "claudeRuntimeTested": false,
+  "bundle": "output/skills/vikunja-mcp.zip",
+  "bundleSha256": "b10510b8dcc7c090a64e6839eac9880d13e2a4236dc3d0ca3fddcec6b53c8da1",
+  "clientDate": "2026-10-21",
+  "fullRegressionWindows": {
+    "passed": 46,
+    "failed": 0
+  },
+  "portableChecksLinux": {
+    "recordedTraceAssertions": "passed",
+    "passed": 3,
+    "failed": 0
+  }
+}

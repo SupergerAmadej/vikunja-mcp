@@ -1,3 +1,35 @@
 node_modules/
 dist/
+coverage/
+
 .env
+.env.*
+!.env.example
+
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+*.tsbuildinfo
+.cache/
+.tmp/
+tmp/
+data/
+
+# Generated reports, skill bundles and release archives stay local.
+/output/
+
+# Private keys, database copies and local account exports never ship.
+*.pem
+*.key
+*.p12
+*.pfx
+*.kdbx
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+/local-credentials*
+/local-access*

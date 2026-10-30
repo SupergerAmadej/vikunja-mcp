@@ -1,0 +1,113 @@
+{
+  "checkedAt": "2026-10-20T06:08:30.299Z",
+  "mcpVersion": "0.2.1",
+  "sourceCommit": "a16be96aa454671fdf213b0fbe411dd38a098418",
+  "sourceArchiveSha256": "2c8e97bd7e993be2b51150018f9a6c96a8dfeb59d72267a47f83f91134567376",
+  "patchSha256": "1bd6cd6b6d378b7581fec5c253e73df884a44e00a3012dc06615a4e67937ef18",
+  "toolSchemaSha256": "29e3884bb212eae8979e81047bb741ff0f484f0e353820421c51fe63c32d2f97",
+  "sourceFiles": {
+    "src/atomic-updates.ts": "7cdc409bfa83a4436b7e8e70c75eabc453efb3961ee03e49bc7ae9ef0b131716",
+    "src/config.ts": "ed3159ae9495b50eb1ff1ecef589d264951742502d38fcd9a2cb54854da09973",
+    "src/index.ts": "4fa39bb675e07564ee0642c2aee79e058db92a3cbe67167aa6a55e15421df453",
+    "src/pagination.ts": "64ad86cd84d195e3e88a4b179bd24a2017edbee938edefde4661cbc8105737b0",
+    "src/tool-inputs.ts": "3d9a93a0f69770d8fa77f41552b6712c3723b63f9dafb34461c5ec5357c642b2",
+    "src/updates.ts": "aac0e6b50d26c7424c646994cb7c3d185adf5e7a849a0192f684cce13de50a0e",
+    "src/uploads.ts": "9ca9053385825499ef2cfa8e33b4da170c98d7e0f12fbc47074f41cac4a4e220"
+  },
+  "verification": {
+    "mcpRegression": {
+      "windows": 43,
+      "linux": 43
+    },
+    "stockIntegration": {
+      "windows": 11,
+      "linux": 11
+    },
+    "atomicIntegration": {
+      "platform": "linux-amd64",
+      "requiredAtomic": true,
+      "scenarios": 9,
+      "totalTests": 10,
+      "passed": 10,
+      "failed": 0
+    },
+    "negativeControl": "All four original overwrite failures reproduced on unpatched source",
+    "upstream": "Model and HTTP tests passed, including positive/negative/inherited permissions and admin-only reparenting",
+    "productionContainer": "uid 1000, read-only root, dropped capabilities, liveness and 42 tools passed",
+    "productionStack": {
+      "checkedAt": "2026-10-20T06:07:47.699Z",
+      "backendVersion": "2.7.0+atomic-fields.1",
+      "atomicProtocol": 1,
+      "frontendAssets": 52,
+      "correspondingSource": true,
+      "scopedTokenWrites": true,
+      "readOnlyTokenDenied": true,
+      "staleSnapshotPreserved": true,
+      "persistenceAfterRecreation": true,
+      "attachmentPersistence": true,
+      "nonRoot": true,
+      "readOnlyRoot": true,
+      "tools": 42,
+      "liveDeploymentChanged": false
+    }
+  },
+  "proofLogs": {
+    "positiveSha256": "ea3af26ce708976da185d6913436328216e8ccbbc4bef8e844b951fe733fa643",
+    "negativeSha256": "2a11adbc702fb9bcb86c585c76920beb4734d9eb3bf5e05e5f7fbb7de1e8b464",
+    "nativeSha256": "0ae75b7581f85edb7f5ed3bba58f271f24001cd8f079e355ff8440bfeb1b5262",
+    "localDirectory": ".tmp/atomic-proof/run-eLnPfV/output"
+  },
+  "deploymentChanged": false,
+  "remainingDecision": null,
+  "productionFiles": {
+    ".gitattributes": "03b8e2e3aaa1b2606704dba337e632a8adce7973838d543a13f7d887444610ed",
+    ".env.example": "e143d88e2c013feb42407e43b86002d89fa70f19fac504a8e9df901e9d9c7922",
+    "Dockerfile": "a3fca8fe679c178f47fe44c2c1098be4d7ada0839c4b65d5afe69d2765fca2e2",
+    "docker-compose.example.yml": "7cb22ae5fe4cc1b13ab3205fa39bb45e02af915f7d9013b3fdf99e8f91dbd8ae",
+    "upstream/vikunja.Dockerfile": "519534a2b8e09fed61365e61926c37b6d7111a150a11735bf04014b87be3f9be",
+    "upstream/prepare-source.mjs": "ca21d8bbd188fbd1edcf6e3a06e16ed9808aad40daf67f86e7da91713d969270",
+    "upstream/README.md": "d7f5f5451a53e19956417d348967363736b143af22f928a6d1164d41619d0ffa",
+    "scripts/test-stack.mjs": "55ea4ac87a8c92f82752f3d655d2ccbba397621582f1210dc0bd808c943a444a",
+    ".github/workflows/ci.yml": "35c74dff85a62cad55ebe10a81c716d3cd1743936b1e615f17c4a7ece3dbe33a"
+  },
+  "adoption": {
+    "approvedBy": "maintainer",
+    "projectDefaultBackend": "2.7.0+atomic-fields.1",
+    "requiredAtomicByDefault": true,
+    "stockCompatibility": "explicit VIKUNJA_REQUIRE_ATOMIC_UPDATES=0",
+    "existingDeploymentChanged": false
+  },
+  "postAdoptionLogs": {
+    ".tmp/adoption-regression-windows.log": {
+      "passed": 43,
+      "failed": 0,
+      "sha256": "32d2004e73f2588aa9844e45106eadc9820e1eba3987e2a9e14ec71f30243482"
+    },
+    ".tmp/adoption-regression-linux.log": {
+      "passed": 43,
+      "failed": 0,
+      "sha256": "76546c38696968cf9d317810602737269c962bb00c51f92b32564e4ca2ef2370"
+    },
+    ".tmp/adoption-stock-windows.log": {
+      "passed": 11,
+      "failed": 0,
+      "sha256": "d643ded595f75f513e469bee3ee12a1a2fcc2f9f43e755f45c9cb7904156b6f6"
+    },
+    ".tmp/adoption-stock-linux.log": {
+      "passed": 11,
+      "failed": 0,
+      "sha256": "bae0b3712de29803b542afd59f27ce32ef8d32e04bc3e8ee07e496c5db84fece"
+    },
+    ".tmp/adoption-atomic-linux.log": {
+      "passed": 10,
+      "failed": 0,
+      "sha256": "37457d3d549a77f3cb6bf8124a26ae4b04f2ffe893e9a9912794433f7e6ef6c2"
+    },
+    ".tmp/adoption-stack.log": {
+      "sha256": "d19fb24b2fc611beedf2b828e88db72d64a697dbb8ab5ae31cfa5f07e341ca5e"
+    },
+    ".tmp/stack-proof/run-SDOWpf/verification.json": {
+      "sha256": "c889e0a5d3b68b2fbda5ce24d6465eec54c680cb40214802140532b438043aeb"
+    }
+  }
+}

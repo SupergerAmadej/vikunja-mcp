@@ -1,0 +1,13 @@
+# Optional loopback-only configuration for local development.
+# Use together with docker-compose.example.yml; secrets live in ignored .env.
+name: vikunja-local
+services:
+  vikunja:
+    environment:
+      VIKUNJA_SERVICE_PUBLICURL: http://127.0.0.1:3456/
+      VIKUNJA_SERVICE_ENABLEREGISTRATION: ${VIKUNJA_LOCAL_ENABLE_REGISTRATION:-false}
+  vikunja-mcp:
+    environment:
+      VIKUNJA_USER_ID: ${VIKUNJA_USER_ID:-1}
+      VIKUNJA_USERNAME: ${VIKUNJA_USERNAME:-localadmin}
+      VIKUNJA_USER_EMAIL: ${VIKUNJA_USER_EMAIL:-localadmin@localhost.invalid}

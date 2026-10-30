@@ -1,0 +1,57 @@
+{
+  "version": "2.7.1",
+  "commit": "5619c4a9f66ddfc13f7bbba24ada07c3e82ae7a0",
+  "sourceUrl": "https://codeload.github.com/go-vikunja/vikunja/tar.gz/5619c4a9f66ddfc13f7bbba24ada07c3e82ae7a0",
+  "sha256": "d67103c770a5289a74eebf5abad73e3278cb930ed5360c6b3814962babb54eab",
+  "license": "AGPL-3.0-or-later",
+  "protocol": 1,
+  "patchFile": "vikunja-2.7.1-atomic-fields.patch",
+  "patchSha256": "30ab6c1c741974d7ce76722c3a34604c7c53bf6c97d645518f56999240655321",
+  "files": [
+    {
+      "path": "pkg/models/field_updates.go",
+      "beforeSha256": null,
+      "afterSha256": "3b2836194a1815f8e2c45ce58690c68a3437fbefa1e214c4b994e1df7c7c226a"
+    },
+    {
+      "path": "pkg/models/label.go",
+      "beforeSha256": "227f3e394a2e18ed16732001318c6aad7d928ec9dad0e04c642a60efde2a0792",
+      "afterSha256": "69347b7f8f0228a7fa239e7b32e08a6f12c936117d27f9e61863084208b1ed5a"
+    },
+    {
+      "path": "pkg/models/project.go",
+      "beforeSha256": "f6c39a24ca4913e0274db0cbb37bc8d0e54476c3bd1dbfd53442320781a1be59",
+      "afterSha256": "8b72cb3dfaf611c469634f12e6582a9468c34aacd74343d2bdf43677ac698952"
+    },
+    {
+      "path": "pkg/models/project_permissions.go",
+      "beforeSha256": "35994c317a8b787b1ba7e52fd6a56107ae818f9547b23dd25c8821e73e4a777f",
+      "afterSha256": "0a0a170fd6f95d06d2bf705dc921db1bb6fc8d2aee251ff128e298973d11e0fb"
+    },
+    {
+      "path": "pkg/models/tasks.go",
+      "beforeSha256": "1a4edc8cb1818408fe6d4c1954e3a968e7f07ce01f1cf42034328e67fe64bc9e",
+      "afterSha256": "3d9c9f8ee48b7f4600c351d42753938e891757dac2428a21118b135beb7a0ff6"
+    },
+    {
+      "path": "pkg/models/tasks_permissions.go",
+      "beforeSha256": "0fd855c24904fd1903ffbe30df7bc1a4406c690e90467f0b35859291c91d3417",
+      "afterSha256": "c93eba5d5f9b70ba5315a735bcc51eb6be224e326291cdc4fe5aeef88584fd10"
+    },
+    {
+      "path": "pkg/routes/api/shared/info.go",
+      "beforeSha256": "a42c5b5d5257aedcd2b67d8554fa4933f5a3d6225f975ee0f8641121b2a267e5",
+      "afterSha256": "b6dad946127be567ffdd012e103c6047a5d3d835c87fdca8b04607f38f3f3a20"
+    },
+    {
+      "path": "pkg/routes/api/v2/field_updates.go",
+      "beforeSha256": null,
+      "afterSha256": "b424a4df55d79c1bb65a8bf6369908c6993f54b80405739a85652dc0f850bf19"
+    },
+    {
+      "path": "pkg/webtests/huma_field_updates_test.go",
+      "beforeSha256": null,
+      "afterSha256": "90e455152cb43f869a53b44868cede06a2225d8bb765f9224044d2fa3b759c97"
+    }
+  ]
+}

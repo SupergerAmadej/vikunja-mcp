@@ -1,19 +1,40 @@
 services:
   vikunja:
-    image: vikunja/vikunja:latest
-    container_name: vikunja
+    image: vikunja-mcp-backend:2.7.1-atomic-fields.1
+    build:
+      context: .
+      dockerfile: upstream/vikunja.Dockerfile
+    # The image runs as uid 1000. Provision the host directories with this owner.
+    volumes:
+      - ./data/vikunja/db:/db
+      - ./data/vikunja/files:/app/vikunja/files
+    environment:
+      VIKUNJA_SERVICE_PUBLICURL: http://localhost:3456/
+      VIKUNJA_SERVICE_JWTSECRET: ${VIKUNJA_JWT_SECRET:?Set VIKUNJA_JWT_SECRET}
+      VIKUNJA_DATABASE_TYPE: sqlite
+      VIKUNJA_DATABASE_PATH: /db/vikunja.db
     ports:
-      - "3456:3456"
+      - "127.0.0.1:3456:3456"
+    read_only: true
+    tmpfs:
+      - /tmp:uid=1000,gid=1000,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
 
   vikunja-mcp:
     build: .
-    container_name: vikunja-mcp
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     environment:
       VIKUNJA_BASE_URL: http://vikunja:3456
-      VIKUNJA_TOKEN: ${VIKUNJA_TOKEN}
-      VIKUNJA_MCP_API_KEY: ${VIKUNJA_MCP_API_KEY}
+      VIKUNJA_TOKEN: ${VIKUNJA_TOKEN:?Set VIKUNJA_TOKEN}
+      VIKUNJA_MCP_API_KEY: ${VIKUNJA_MCP_API_KEY:?Set VIKUNJA_MCP_API_KEY}
       VIKUNJA_TIMEOUT_MS: 10000
+      VIKUNJA_REQUIRE_ATOMIC_UPDATES: ${VIKUNJA_REQUIRE_ATOMIC_UPDATES:-1}
     depends_on:
       - vikunja
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped

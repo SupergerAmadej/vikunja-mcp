@@ -1,0 +1,5 @@
+# Preserve the exact reviewed patch bytes on Windows and Linux checkouts.
+upstream/*.patch text eol=lf
+# Skill/evaluation fingerprints must survive Windows and Linux checkouts.
+skills/**/*.md text eol=lf
+skills/**/*.yaml text eol=lf

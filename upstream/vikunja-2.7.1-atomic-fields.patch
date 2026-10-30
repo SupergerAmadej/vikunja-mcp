@@ -1,0 +1,702 @@
+diff --git a/pkg/models/field_updates.go b/pkg/models/field_updates.go
+new file mode 100644
+--- /dev/null
++++ b/pkg/models/field_updates.go
+@@ -0,0 +1,143 @@
++// Vikunja is a to-do list application to facilitate your life.
++// Copyright 2018-present Vikunja and contributors. All rights reserved.
++//
++// SPDX-License-Identifier: AGPL-3.0-or-later
++
++package models
++
++import (
++	"code.vikunja.io/api/pkg/web"
++	"xorm.io/xorm"
++)
++
++var taskUpdateFields = []string{
++	"title",
++	"description",
++	"done",
++	"due_date",
++	"repeat_after",
++	"priority",
++	"start_date",
++	"end_date",
++	"hex_color",
++	"percent_done",
++	"project_id",
++	"bucket_id",
++	"repeat_mode",
++	"cover_image_attachment_id",
++	"assignees",
++	"reminders",
++	"is_favorite",
++}
++
++func checkedUpdateFields(fields, allowed []string) (map[string]bool, error) {
++	if fields == nil {
++		return nil, nil
++	}
++	if len(fields) == 0 {
++		return nil, ErrInvalidModel{Message: "update_fields must not be empty"}
++	}
++	choices := make(map[string]bool, len(allowed))
++	for _, field := range allowed {
++		choices[field] = true
++	}
++	selected := make(map[string]bool, len(fields))
++	for _, field := range fields {
++		if !choices[field] {
++			return nil, ErrInvalidModel{Message: "Unknown update field: " + field}
++		}
++		if selected[field] {
++			return nil, ErrInvalidModel{Message: "Duplicate update field: " + field}
++		}
++		selected[field] = true
++	}
++	return selected, nil
++}
++
++func (p *Project) prepareFieldUpdate(s *xorm.Session, a web.Auth) (map[string]bool, error) {
++	selected, err := checkedUpdateFields(p.UpdateFields, []string{
++		"title",
++		"description",
++		"identifier",
++		"hex_color",
++		"is_favorite",
++		"is_archived",
++		"parent_project_id",
++		"position",
++	})
++	if err != nil || selected == nil {
++		return selected, err
++	}
++	if p.ID < 1 {
++		return nil, ErrInvalidModel{Message: "Field updates require a real project"}
++	}
++	// Bypass permission-query memoization and lock the authoritative row for
++	// the transaction before interpreting archive/reparent side effects.
++	stored := &Project{}
++	exists, err := lockingSession(s).ID(p.ID).Get(stored)
++	if err != nil {
++		return nil, err
++	}
++	if !exists {
++		return nil, ErrProjectDoesNotExist{ID: p.ID}
++	}
++	if !selected["title"] {
++		p.Title = stored.Title
++	}
++	if !selected["description"] {
++		p.Description = stored.Description
++	}
++	if !selected["identifier"] {
++		p.Identifier = stored.Identifier
++	}
++	if !selected["hex_color"] {
++		p.HexColor = stored.HexColor
++	}
++	if !selected["is_archived"] {
++		p.IsArchived = stored.IsArchived
++	}
++	if !selected["position"] {
++		p.Position = stored.Position
++	}
++	if !selected["parent_project_id"] {
++		p.ParentProjectID = nil
++	} else if p.ParentProjectID == nil {
++		p.ParentProjectID = noParentProjectID()
++	}
++	if !selected["is_favorite"] {
++		p.IsFavorite, err = isFavorite(s, p.ID, a, FavoriteKindProject)
++		if err != nil {
++			return nil, err
++		}
++	}
++	return selected, nil
++}
++
++func validateFieldUpdateReminders(task *Task) error {
++	for _, reminder := range task.Reminders {
++		if reminder == nil {
++			return ErrInvalidModel{Message: "A reminder must not be null"}
++		}
++		switch reminder.RelativeTo {
++		case "":
++			if reminder.Reminder.IsZero() {
++				return ErrInvalidModel{Message: "An absolute reminder needs a timestamp"}
++			}
++		case ReminderRelationDueDate:
++			if task.DueDate.IsZero() {
++				return ErrInvalidModel{Message: "Relative reminder due_date is not set"}
++			}
++		case ReminderRelationStartDate:
++			if task.StartDate.IsZero() {
++				return ErrInvalidModel{Message: "Relative reminder start_date is not set"}
++			}
++		case ReminderRelationEndDate:
++			if task.EndDate.IsZero() {
++				return ErrInvalidModel{Message: "Relative reminder end_date is not set"}
++			}
++		default:
++			return ErrInvalidModel{Message: "Unknown relative reminder base"}
++		}
++	}
++	return nil
++}
+diff --git a/pkg/models/label.go b/pkg/models/label.go
+--- a/pkg/models/label.go
++++ b/pkg/models/label.go
+@@ -28,6 +28,7 @@
+ 
+ // Label represents a label
+ type Label struct {
++	UpdateFields []string `xorm:"-" json:"update_fields,omitempty" writeOnly:"true" doc:"Optional non-empty field mask. Only title, description and hex_color may be named; omitted fields retain their current values."`
+ 	// The unique, numeric id of this label.
+ 	ID int64 `xorm:"bigint autoincr not null unique pk" json:"id" param:"label" readOnly:"true" doc:"The unique, numeric id of this label."`
+ 	// The title of the label. You'll see this one on tasks associated with it.
+@@ -98,16 +99,24 @@
+ // @Failure 500 {object} models.Message "Internal error"
+ // @Router /labels/{id} [put]
+ func (l *Label) Update(s *xorm.Session, a web.Auth) (err error) {
++	columns := []string{
++		"title",
++		"description",
++		"hex_color",
++	}
++	selected, err := checkedUpdateFields(l.UpdateFields, columns)
++	if err != nil {
++		return err
++	}
++	if selected != nil {
++		columns = l.UpdateFields
++	}
+ 
+ 	l.HexColor = utils.NormalizeHex(l.HexColor)
+ 
+ 	_, err = s.
+ 		ID(l.ID).
+-		Cols(
+-			"title",
+-			"description",
+-			"hex_color",
+-		).
++		Cols(columns...).
+ 		Update(l)
+ 	if err != nil {
+ 		return
+diff --git a/pkg/models/project.go b/pkg/models/project.go
+--- a/pkg/models/project.go
++++ b/pkg/models/project.go
+@@ -38,6 +38,7 @@
+ 
+ // Project represents a project of tasks
+ type Project struct {
++	UpdateFields []string `xorm:"-" json:"update_fields,omitempty" writeOnly:"true" doc:"Optional non-empty field mask. Only named mutable fields are applied. Including description permits an explicit empty-string clear."`
+ 	// The unique, numeric id of this project.
+ 	ID int64 `xorm:"bigint autoincr not null unique pk" json:"id" param:"project" readOnly:"true" doc:"The unique, numeric id of this project."`
+ 	// The title of the project. You'll see this in the overview.
+@@ -1185,6 +1186,10 @@
+ }
+ 
+ func UpdateProject(s *xorm.Session, project *Project, auth web.Auth, updateProjectBackground bool) (err error) {
++	selected, err := project.prepareFieldUpdate(s, auth)
++	if err != nil {
++		return err
++	}
+ 	err = checkProjectBeforeUpdateOrDelete(s, project)
+ 	if err != nil {
+ 		return
+@@ -1235,7 +1240,7 @@
+ 		colsToUpdate = append(colsToUpdate, "parent_project_id")
+ 		parentChanged = isReparent(project, storedProject)
+ 	}
+-	if project.Description != "" {
++	if project.Description != "" || selected["description"] {
+ 		colsToUpdate = append(colsToUpdate, "description")
+ 	}
+ 
+@@ -1261,13 +1266,24 @@
+ 
+ 	project.HexColor = utils.NormalizeHex(project.HexColor)
+ 
+-	_, err = s.
+-		ID(project.ID).
+-		Cols(colsToUpdate...).
+-		Nullable("parent_project_id").
+-		Update(project)
+-	if err != nil {
+-		return err
++	if selected != nil {
++		cols := []string{}
++		for _, column := range colsToUpdate {
++			if selected[column] {
++				cols = append(cols, column)
++			}
++		}
++		colsToUpdate = cols
++	}
++	if len(colsToUpdate) > 0 {
++		_, err = s.
++			ID(project.ID).
++			Cols(colsToUpdate...).
++			Nullable("parent_project_id").
++			Update(project)
++		if err != nil {
++			return err
++		}
+ 	}
+ 
+ 	if parentChanged {
+diff --git a/pkg/models/project_permissions.go b/pkg/models/project_permissions.go
+--- a/pkg/models/project_permissions.go
++++ b/pkg/models/project_permissions.go
+@@ -211,6 +211,9 @@
+ 
+ // CanUpdate checks if the user can update a project
+ func (p *Project) CanUpdate(s *xorm.Session, a web.Auth) (canUpdate bool, err error) {
++	if _, err := p.prepareFieldUpdate(s, a); err != nil {
++		return false, err
++	}
+ 	// The favorite project can't be edited
+ 	if p.ID == FavoritesPseudoProject.ID {
+ 		return false, nil
+diff --git a/pkg/models/tasks.go b/pkg/models/tasks.go
+--- a/pkg/models/tasks.go
++++ b/pkg/models/tasks.go
+@@ -76,6 +76,7 @@
+ 
+ // Task represents a task in a project
+ type Task struct {
++	UpdateFields []string `xorm:"-" json:"update_fields,omitempty" writeOnly:"true" doc:"Optional non-empty field mask. Only named mutable fields are applied; omitted fields and collections retain their current stored values."`
+ 	// The unique, numeric id of this task.
+ 	ID int64 `xorm:"bigint autoincr not null unique pk" json:"id" param:"projecttask" readOnly:"true" doc:"The unique, numeric id of this task."`
+ 	// The task text. This is what you'll see in the project.
+@@ -1287,11 +1288,14 @@
+ // @Router /tasks/{id} [post]
+ // Update updates a project task by delegating to the shared bulk helper.
+ func (t *Task) Update(s *xorm.Session, a web.Auth) (err error) {
+-	return t.updateSingleTask(s, a, nil)
++	return t.updateSingleTask(s, a, t.UpdateFields)
+ }
+ 
+ //nolint:gocyclo
+ func (t *Task) updateSingleTask(s *xorm.Session, a web.Auth, fields []string) (err error) {
++	if fields != nil && len(fields) == 0 {
++		return ErrInvalidModel{Message: "update_fields must not be empty"}
++	}
+ 
+ 	// Row lock so concurrent movers serialize; bypasses the session memo so the read is not the earlier permission-check copy.
+ 	ot, err := GetTaskSimple(lockingSession(s), &Task{ID: t.ID})
+@@ -1348,6 +1352,9 @@
+ 			if !allowed[f] && !relationFields[f] {
+ 				return ErrInvalidTaskColumn{Column: f}
+ 			}
++			if fieldSet[f] {
++				return ErrInvalidModel{Message: "Duplicate update field: " + f}
++			}
+ 			if !relationFields[f] {
+ 				cols = append(cols, f)
+ 			}
+@@ -1400,6 +1407,8 @@
+ 		}
+ 		if !fieldSet["reminders"] {
+ 			t.Reminders = ot.Reminders
++		} else if err := validateFieldUpdateReminders(t); err != nil {
++			return err
+ 		}
+ 	}
+ 
+@@ -1407,6 +1416,11 @@
+ 		if err := ot.updateTaskAssignees(s, t.Assignees, a); err != nil {
+ 			return err
+ 		}
++	} else if err := addAssigneesToTasks(s, []int64{t.ID}, map[int64]*Task{t.ID: &ot}); err != nil {
++		return err
++	}
++	if len(fields) > 0 {
++		t.Assignees = ot.Assignees
+ 	}
+ 
+ 	if err := validateRepeatAfter(t.RepeatAfter); err != nil {
+@@ -1667,6 +1681,11 @@
+ 		ot.CoverImageAttachmentID = 0
+ 	}
+ 
++	if len(colsToUpdate) == 0 {
++		// Cols() with an empty slice would select every nonzero column.
++		colsToUpdate = []string{"updated"}
++		ot.Updated = time.Now()
++	}
+ 	_, err = s.ID(t.ID).
+ 		Cols(colsToUpdate...).
+ 		Update(&ot)
+@@ -1683,6 +1702,14 @@
+ 		return err
+ 	}
+ 	t.Updated = nt.Updated
++	t.UpdateFields = nil
++	if len(fields) > 0 {
++		// Read-only metadata from a stale request (such as an index after a
++		// move) must not be returned as the canonical result of a masked write.
++		if err := t.ReadOne(s, a); err != nil {
++			return err
++		}
++	}
+ 
+ 	events.DispatchOnCommit(s, &TaskUpdatedEvent{
+ 		Task: t,
+diff --git a/pkg/models/tasks_permissions.go b/pkg/models/tasks_permissions.go
+--- a/pkg/models/tasks_permissions.go
++++ b/pkg/models/tasks_permissions.go
+@@ -28,6 +28,13 @@
+ 
+ // CanUpdate determines if a user has the permission to update a project task
+ func (t *Task) CanUpdate(s *xorm.Session, a web.Auth) (bool, error) {
++	selected, err := checkedUpdateFields(t.UpdateFields, taskUpdateFields)
++	if err != nil {
++		return false, err
++	}
++	if selected != nil && !selected["project_id"] {
++		t.ProjectID = 0
++	}
+ 	return t.canDoTask(s, a)
+ }
+ 
+diff --git a/pkg/routes/api/shared/info.go b/pkg/routes/api/shared/info.go
+--- a/pkg/routes/api/shared/info.go
++++ b/pkg/routes/api/shared/info.go
+@@ -34,6 +34,7 @@
+ 
+ // VikunjaInfos holds public information about this Vikunja instance.
+ type VikunjaInfos struct {
++	AtomicFieldUpdates         int       `json:"atomic_field_updates" doc:"Field-update protocol version. Version 1 provides dedicated v2 field-update routes which apply only explicitly named mutable fields."`
+ 	Version                    string    `json:"version" doc:"The Vikunja version this instance runs."`
+ 	FrontendURL                string    `json:"frontend_url" doc:"The publicly configured frontend URL of this instance."`
+ 	Motd                       string    `json:"motd" doc:"The message of the day, shown to all users."`
+@@ -99,6 +100,7 @@
+ 	}
+ 
+ 	info := VikunjaInfos{
++		AtomicFieldUpdates:     1,
+ 		Version:                version.Version,
+ 		FrontendURL:            config.ServicePublicURL.GetString(),
+ 		Motd:                   config.ServiceMotd.GetString(),
+diff --git a/pkg/routes/api/v2/field_updates.go b/pkg/routes/api/v2/field_updates.go
+new file mode 100644
+--- /dev/null
++++ b/pkg/routes/api/v2/field_updates.go
+@@ -0,0 +1,103 @@
++// Vikunja is a to-do list application to facilitate your life.
++// Copyright 2018-present Vikunja and contributors. All rights reserved.
++//
++// SPDX-License-Identifier: AGPL-3.0-or-later
++
++package apiv2
++
++import (
++	"context"
++	"net/http"
++
++	"code.vikunja.io/api/pkg/models"
++	"github.com/danielgtaylor/huma/v2"
++)
++
++func init() { AddRouteRegistrar(RegisterFieldUpdateRoutes) }
++
++func RegisterFieldUpdateRoutes(api huma.API) {
++	Register(api, huma.Operation{
++		OperationID:   "tasks-update-fields",
++		Summary:       "Update selected task fields",
++		Description:   "Applies only update_fields within the update transaction, preserving omitted scalar fields, assignees, reminders and favorites. The body follows the task read shape and requires a non-empty field mask. Uses the normal task write permissions. A missing route must not be retried as a full replacement.",
++		Method:        http.MethodPost,
++		Path:          "/tasks/{task}/fields",
++		Tags:          []string{"tasks"},
++		DefaultStatus: http.StatusOK,
++	}, taskFieldsUpdate)
++	Register(api, huma.Operation{
++		OperationID:   "projects-update-fields",
++		Summary:       "Update selected project fields",
++		Description:   "Applies only update_fields, including explicit description clears. Omitted archive, parent and favorite state is preserved. Requires normal project write permission and admin permission for reparenting.",
++		Method:        http.MethodPost,
++		Path:          "/projects/{id}/fields",
++		Tags:          []string{"projects"},
++		DefaultStatus: http.StatusOK,
++	}, projectFieldsUpdate)
++	Register(api, huma.Operation{
++		OperationID:   "labels-update-fields",
++		Summary:       "Update selected label fields",
++		Description:   "Applies only the named title, description or hex_color fields. Requires a non-empty update_fields mask and the existing label update permission.",
++		Method:        http.MethodPost,
++		Path:          "/labels/{id}/fields",
++		Tags:          []string{"labels"},
++		DefaultStatus: http.StatusOK,
++	}, labelFieldsUpdate)
++}
++
++func taskFieldsUpdate(ctx context.Context, in *struct {
++	ID     int64  `path:"task" minimum:"1"`
++	Format string `query:"format" enum:"html,markdown" doc:"How rich-text fields are exchanged."`
++	Body   taskReadOneBody
++}) (*singleBody[models.Task], error) {
++	if len(in.Body.UpdateFields) == 0 {
++		return nil, huma.Error422UnprocessableEntity("A non-empty update_fields mask is required")
++	}
++	return tasksUpdate(ctx, &struct {
++		ID     int64  `path:"task"`
++		Format string `query:"format" enum:"html,markdown" doc:"How rich-text fields are exchanged. See the API description."`
++		Body   taskReadOneBody
++	}{
++		ID:     in.ID,
++		Format: in.Format,
++		Body:   in.Body,
++	})
++}
++
++func projectFieldsUpdate(ctx context.Context, in *struct {
++	ID     int64  `path:"id" minimum:"1"`
++	Format string `query:"format" enum:"html,markdown" doc:"How rich-text fields are exchanged."`
++	Body   projectReadBody
++}) (*singleBody[models.Project], error) {
++	if len(in.Body.UpdateFields) == 0 {
++		return nil, huma.Error422UnprocessableEntity("A non-empty update_fields mask is required")
++	}
++	return projectsUpdate(ctx, &struct {
++		ID     int64  `path:"id"`
++		Format string `query:"format" enum:"html,markdown" doc:"How rich-text fields are exchanged. See the API description."`
++		Body   projectReadBody
++	}{
++		ID:     in.ID,
++		Format: in.Format,
++		Body:   in.Body,
++	})
++}
++
++func labelFieldsUpdate(ctx context.Context, in *struct {
++	ID     int64  `path:"id" minimum:"1"`
++	Format string `query:"format" enum:"html,markdown" doc:"How rich-text fields are exchanged."`
++	Body   labelReadBody
++}) (*singleBody[models.Label], error) {
++	if len(in.Body.UpdateFields) == 0 {
++		return nil, huma.Error422UnprocessableEntity("A non-empty update_fields mask is required")
++	}
++	return labelsUpdate(ctx, &struct {
++		ID     int64  `path:"id"`
++		Format string `query:"format" enum:"html,markdown" doc:"How rich-text fields are exchanged. See the API description."`
++		Body   labelReadBody
++	}{
++		ID:     in.ID,
++		Format: in.Format,
++		Body:   in.Body,
++	})
++}
+diff --git a/pkg/webtests/huma_field_updates_test.go b/pkg/webtests/huma_field_updates_test.go
+new file mode 100644
+--- /dev/null
++++ b/pkg/webtests/huma_field_updates_test.go
+@@ -0,0 +1,203 @@
++// Vikunja is a to-do list application to facilitate your life.
++// Copyright 2018-present Vikunja and contributors. All rights reserved.
++//
++// SPDX-License-Identifier: AGPL-3.0-or-later
++
++package webtests
++
++import (
++	"encoding/json"
++	"fmt"
++	"maps"
++	"net/http"
++	"testing"
++
++	"code.vikunja.io/api/pkg/user"
++	"github.com/stretchr/testify/assert"
++	"github.com/stretchr/testify/require"
++)
++
++func TestAtomicFieldUpdatesInheritedPermissionAndReparenting(t *testing.T) {
++	e, err := setupTestEnv()
++	require.NoError(t, err)
++	ownerToken := humaTokenFor(t, &testuser1)
++	read := humaRequest(t, e, http.MethodGet, "/api/v2/projects/1?format=html", "", ownerToken, "")
++	require.Equal(t, http.StatusOK, read.Code, read.Body.String())
++	stale := map[string]any{}
++	require.NoError(t, json.Unmarshal(read.Body.Bytes(), &stale))
++	created := humaRequest(t, e, http.MethodPost, "/api/v2/projects", `{"title":"Field-update parent"}`, ownerToken, "")
++	require.Equal(t, http.StatusCreated, created.Code, created.Body.String())
++	parent := map[string]any{}
++	require.NoError(t, json.Unmarshal(created.Body.Bytes(), &parent))
++	parentID := int64(parent["id"].(float64))
++	shared := humaRequest(t, e, http.MethodPut, fmt.Sprintf("/api/v1/projects/%d/users", parentID), `{"username":"user2","permission":1}`, ownerToken, "")
++	require.Equal(t, http.StatusCreated, shared.Code, shared.Body.String())
++	moved := maps.Clone(stale)
++	moved["parent_project_id"] = parentID
++	changed := humaRequest(t, e, http.MethodPost, "/api/v1/projects/1", fieldUpdateJSON(t, moved), ownerToken, "")
++	require.Equal(t, http.StatusOK, changed.Code, changed.Body.String())
++
++	stale["title"] = "Inherited field edit"
++	stale["update_fields"] = []string{"title"}
++	writer := humaTokenFor(t, &user.User{ID: 2})
++	updated := humaRequest(t, e, http.MethodPost, "/api/v2/projects/1/fields?format=html", fieldUpdateJSON(t, stale), writer, "")
++	require.Equal(t, http.StatusOK, updated.Code, updated.Body.String())
++	current := map[string]any{}
++	require.NoError(t, json.Unmarshal(updated.Body.Bytes(), &current))
++	assert.Equal(t, float64(parentID), current["parent_project_id"])
++	assert.Equal(t, "Inherited field edit", current["title"])
++
++	current["parent_project_id"] = nil
++	current["update_fields"] = []string{"parent_project_id"}
++	denied := humaRequest(t, e, http.MethodPost, "/api/v2/projects/1/fields?format=html", fieldUpdateJSON(t, current), writer, "")
++	require.Equal(t, http.StatusForbidden, denied.Code, denied.Body.String())
++	detached := humaRequest(t, e, http.MethodPost, "/api/v2/projects/1/fields?format=html", fieldUpdateJSON(t, current), ownerToken, "")
++	require.Equal(t, http.StatusOK, detached.Code, detached.Body.String())
++	require.NoError(t, json.Unmarshal(detached.Body.Bytes(), &current))
++	assert.Equal(t, float64(0), current["parent_project_id"])
++	assert.Equal(t, "Inherited field edit", current["title"])
++}
++
++func fieldUpdateJSON(t *testing.T, value any) string {
++	t.Helper()
++	body, err := json.Marshal(value)
++	require.NoError(t, err)
++	return string(body)
++}
++
++func TestAtomicFieldUpdates(t *testing.T) {
++	for _, resource := range []string{
++		"tasks",
++		"projects",
++		"labels",
++	} {
++		t.Run(resource, func(t *testing.T) {
++			e, err := setupTestEnv()
++			require.NoError(t, err)
++			token := humaTokenFor(t, &testuser1)
++			path := "/api/v2/" + resource + "/1"
++			read := humaRequest(t, e, http.MethodGet, path+"?format=html", "", token, "")
++			require.Equal(t, http.StatusOK, read.Code, read.Body.String())
++			stale := map[string]any{}
++			require.NoError(t, json.Unmarshal(read.Body.Bytes(), &stale))
++			external := maps.Clone(stale)
++			external["description"] = "External description"
++			if resource == "tasks" {
++				external["assignees"] = []map[string]any{
++					{"id": 1},
++				}
++				external["reminders"] = []map[string]any{
++					{"reminder": "2027-01-01T00:00:00Z"},
++				}
++				external["is_favorite"] = true
++			}
++			if resource != "tasks" {
++				external["hex_color"] = "abcdef"
++			}
++			changed := humaRequest(t, e, http.MethodPost, "/api/v1/"+resource+"/1", fieldUpdateJSON(t, external), token, "")
++			require.Equal(t, http.StatusOK, changed.Code, changed.Body.String())
++
++			stale["title"] = "Masked title"
++			stale["update_fields"] = []string{"title"}
++			updated := humaRequest(t, e, http.MethodPost, path+"/fields?format=html", fieldUpdateJSON(t, stale), token, "")
++			require.Equal(t, http.StatusOK, updated.Code, updated.Body.String())
++			after := humaRequest(t, e, http.MethodGet, path+"?format=html", "", token, "")
++			require.Equal(t, http.StatusOK, after.Code, after.Body.String())
++			stored := map[string]any{}
++			require.NoError(t, json.Unmarshal(after.Body.Bytes(), &stored))
++			assert.Equal(t, "Masked title", stored["title"])
++			assert.Equal(t, "External description", stored["description"])
++			assert.NotContains(t, stored, "update_fields")
++			if resource == "tasks" {
++				assert.Equal(t, true, stored["is_favorite"])
++				require.Len(t, stored["assignees"], 1)
++				require.Len(t, stored["reminders"], 1)
++			} else {
++				assert.Equal(t, "abcdef", stored["hex_color"])
++			}
++
++			if resource == "projects" {
++				stored["description"] = ""
++				stored["update_fields"] = []string{"description"}
++				cleared := humaRequest(t, e, http.MethodPost, path+"/fields?format=html", fieldUpdateJSON(t, stored), token, "")
++				require.Equal(t, http.StatusOK, cleared.Code, cleared.Body.String())
++				require.NoError(t, json.Unmarshal(cleared.Body.Bytes(), &stored))
++				assert.Equal(t, "", stored["description"])
++			}
++		})
++	}
++}
++
++func TestAtomicFieldUpdatesPermissions(t *testing.T) {
++	for _, test := range []struct {
++		resource string
++		id       string
++		owner    int64
++	}{
++		{
++			resource: "tasks",
++			id:       "32",
++			owner:    3,
++		},
++		{
++			resource: "projects",
++			id:       "3",
++			owner:    3,
++		},
++		{
++			resource: "labels",
++			id:       "3",
++			owner:    2,
++		},
++	} {
++		t.Run(test.resource, func(t *testing.T) {
++			e, err := setupTestEnv()
++			require.NoError(t, err)
++			ownerToken := humaTokenFor(t, &user.User{ID: test.owner})
++			path := "/api/v2/" + test.resource + "/" + test.id
++			read := humaRequest(t, e, http.MethodGet, path+"?format=html", "", ownerToken, "")
++			require.Equal(t, http.StatusOK, read.Code, read.Body.String())
++			body := map[string]any{}
++			require.NoError(t, json.Unmarshal(read.Body.Bytes(), &body))
++			title := body["title"]
++			body["title"] = "Forbidden"
++			body["update_fields"] = []string{"title"}
++			denied := humaRequest(t, e, http.MethodPost, path+"/fields?format=html", fieldUpdateJSON(t, body), humaTokenFor(t, &testuser1), "")
++			require.Equal(t, http.StatusForbidden, denied.Code, denied.Body.String())
++			after := humaRequest(t, e, http.MethodGet, path+"?format=html", "", ownerToken, "")
++			require.NoError(t, json.Unmarshal(after.Body.Bytes(), &body))
++			assert.Equal(t, title, body["title"])
++		})
++	}
++}
++
++func TestAtomicFieldUpdatesRejectInvalidMasks(t *testing.T) {
++	for _, resource := range []string{
++		"tasks",
++		"projects",
++		"labels",
++	} {
++		t.Run(resource, func(t *testing.T) {
++			e, err := setupTestEnv()
++			require.NoError(t, err)
++			token := humaTokenFor(t, &testuser1)
++			path := "/api/v2/" + resource + "/1"
++			read := humaRequest(t, e, http.MethodGet, path+"?format=html", "", token, "")
++			require.Equal(t, http.StatusOK, read.Code, read.Body.String())
++			body := map[string]any{}
++			require.NoError(t, json.Unmarshal(read.Body.Bytes(), &body))
++			for _, mask := range [][]string{
++				{},
++				{"owner_id"},
++				{"title", "title"},
++			} {
++				body["update_fields"] = mask
++				invalid := humaRequest(t, e, http.MethodPost, path+"/fields?format=html", fieldUpdateJSON(t, body), token, "")
++				assert.Contains(t, []int{
++					http.StatusBadRequest,
++					http.StatusUnprocessableEntity,
++				}, invalid.Code, invalid.Body.String())
++			}
++		})
++	}
++}

@@ -1,21 +1,29 @@
 {
   "name": "vikunja-mcp",
-  "version": "0.1.0",
+  "version": "0.2.1",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "description": "HTTP MCP server for Vikunja, packaged for local and Docker deployment.",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "validate": "npm run build && node --eval \"process.env.VIKUNJA_MCP_VALIDATE_ONLY='1'; import('./dist/index.js')\""
+    "validate": "npm run build && node --eval \"process.env.VIKUNJA_MCP_VALIDATE_ONLY='1'; import('./dist/index.js')\"",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "test:integration": "npm run build && node scripts/test-integration.mjs",
+    "test:container": "node scripts/test-container.mjs",
+    "test:atomic": "node scripts/test-upstream-atomic.mjs",
+    "test:stack": "node scripts/test-stack.mjs",
+    "test:skill": "node --test test/skill-examples.test.mjs && node evals/vikunja-mcp/check-traces.mjs",
+    "tool-contract:update": "npm run build && node scripts/tool-contract.mjs --update"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24 <25"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
-    "express": "^5.1.0",
-    "zod": "^4.0.0"
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "express": "^5.3.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
