@@ -26,6 +26,10 @@ duplicates or incomplete coverage leave the outcome uncertain.
 
 ## Make a focused edit
 
+First reuse or obtain the selected instance's health/capability report. Continue
+only when the tool is supported and the requested operation is not listed as
+unsupported. In blocked mode, report the limitation without attempting the write.
+
 Read the task when needed to resolve identity or inspect relevant state. Send
 only the requested changes; do not copy the whole read response into an update.
 For "50% complete and clear its deadline", use:
@@ -36,8 +40,8 @@ For "50% complete and clear its deadline", use:
 
 The output fraction 0.5 means 50%, not 0.5%. Finishing a task is a completion
 operation, rather than an instruction to set its progress percentage. A project
-description clear is `update_project` with `description: ""`; if an older server
-rejects the clear, report that no unsupported clear was applied.
+description clear is `update_project` with `description: ""`; stock mode cannot
+clear an existing non-empty description, so report that limit before calling it.
 
 ## Add collection members without removing others
 

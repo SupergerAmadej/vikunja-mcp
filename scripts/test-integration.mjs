@@ -3,12 +3,13 @@ import { execFileSync,spawnSync } from 'node:child_process';
 import { mkdir,stat,writeFile,chmod } from 'node:fs/promises';
 import { resolve,join } from 'node:path';
 
-const version='2.7.1';
+const version=process.env.TEST_VIKUNJA_VERSION??'2.7.1';
+if(!['2.7.0','2.7.1'].includes(version)) throw new Error('TEST_VIKUNJA_VERSION must be 2.7.0 or 2.7.1');
 let binary=process.env.TEST_VIKUNJA_BINARY;
 if(!binary) {
   const platform=process.platform;
   if(!['win32','linux'].includes(platform) || process.arch!=='x64') {
-    throw new Error('Set TEST_VIKUNJA_BINARY to the official Vikunja 2.7.1 executable on this platform');
+    throw new Error(`Set TEST_VIKUNJA_BINARY to the official Vikunja ${version} executable on this platform`);
   }
   const name=platform==='win32'?`vikunja-v${version}-windows-4.0-amd64.exe-full.zip`:`vikunja-v${version}-linux-amd64-full.zip`;
   const release=await fetch(`https://api.github.com/repos/go-vikunja/vikunja/releases/tags/v${version}`);

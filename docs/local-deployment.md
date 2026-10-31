@@ -11,7 +11,7 @@ loopback URLs. Both services publish ports only on the local machine.
 | MCP endpoint | `http://127.0.0.1:9090/mcp` |
 | MCP client connection name | `vikunja-local` |
 | MCP version | `0.2.1` |
-| Backend version | `2.7.1+atomic-fields.1` |
+| Backend version | Official unpatched `2.7.1` by default; atomic extension optional |
 | Database directory | `data/vikunja/db` |
 | Attachment directory | `data/vikunja/files` |
 | Service secrets | `.env` (private; ignored by Git) |

@@ -68,7 +68,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env) {
     host: env.HOST?.trim() ?? "127.0.0.1", allowedHosts, allowedOrigins,
     uploadDirectory, maxUploadBytes: integer("VIKUNJA_MAX_UPLOAD_BYTES", 524_288, 52_428_800),
     maxConcurrentRequests: integer("VIKUNJA_MCP_MAX_CONCURRENT_REQUESTS", 32, 1024),
-    requireAtomicUpdates: env.VIKUNJA_REQUIRE_ATOMIC_UPDATES !== "0",
+    requireAtomicUpdates: env.VIKUNJA_REQUIRE_ATOMIC_UPDATES === "1",
   };
 }
 

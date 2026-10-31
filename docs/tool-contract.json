@@ -3,7 +3,7 @@
     "name": "vikunja-http",
     "version": "0.2.1"
   },
-  "schemaSha256": "29e3884bb212eae8979e81047bb741ff0f484f0e353820421c51fe63c32d2f97",
+  "schemaSha256": "b9ad9a0b394a489f5cde8d4e036f0241d509df698ce2379755e13e35051d8b81",
   "tools": [
     {
       "annotations": {
@@ -1592,7 +1592,7 @@
         "openWorldHint": true,
         "readOnlyHint": true
       },
-      "description": "Verify that the configured Vikunja API token and base URL work.",
+      "description": "Verify connectivity and report the backend version, update mode, supported update tools and known operation limits. Check this before updating an unfamiliar server.",
       "execution": {
         "taskSupport": "forbidden"
       },

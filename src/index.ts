@@ -420,7 +420,7 @@ async function updateProjectObject(projectId: number, changes: JsonRecord) {
       return summarizeProject(await atomicFieldUpdates.write("projects", projectId, updatedProject, fields));
     }
     if (updatedProject.description === "" && existing.description) {
-      throw new Error("Vikunja 2.7.0 does not support clearing a non-empty project description. No changes were written.");
+      throw new Error("Stock Vikunja does not support clearing a non-empty project description. No changes were written.");
     }
     const response = await vikunjaFetch<JsonRecord>(`/projects/${projectId}`, {
       method: "POST",
@@ -684,7 +684,7 @@ function createServer() {
     {
       inputSchema: strictInput({}),
       title: "Vikunja Health",
-      description: "Verify that the configured Vikunja API token and base URL work.",
+      description: "Verify connectivity and report the backend version, update mode, supported update tools and known operation limits. Check this before updating an unfamiliar server.",
       annotations: {
         readOnlyHint: true,
         idempotentHint: true,
@@ -693,11 +693,13 @@ function createServer() {
     },
     async () => {
       const { projects } = await getProjects({ perPage: 1 });
+      const capabilities = await atomicFieldUpdates.describe();
 
       return toolResult("Vikunja connection OK", {
         baseApiUrl: config.baseApiUrl,
         timeoutMs: config.timeoutMs,
         sampleProjectCount: projects.length,
+        ...capabilities,
       });
     },
   );

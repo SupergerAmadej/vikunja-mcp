@@ -11,7 +11,7 @@ test('config normalizes root, proxy paths and full v1 URLs with loopback default
     assert.equal(loadConfig({...secrets,VIKUNJA_BASE_URL:url}).baseApiUrl,expected);
   }
   assert.equal(loadConfig({...secrets,VIKUNJA_API_URL:'https://fallback.test'}).baseApiUrl,'https://fallback.test/api/v1');
-  assert.equal(loadConfig(secrets).requireAtomicUpdates,true);
+  assert.equal(loadConfig(secrets).requireAtomicUpdates,false);
   assert.equal(loadConfig({...secrets,VIKUNJA_REQUIRE_ATOMIC_UPDATES:'1'}).requireAtomicUpdates,true);
   assert.equal(loadConfig({...secrets,VIKUNJA_REQUIRE_ATOMIC_UPDATES:'0'}).requireAtomicUpdates,false);
   assert.throws(()=>loadConfig({...secrets,VIKUNJA_REQUIRE_ATOMIC_UPDATES:'true'}),/VIKUNJA_REQUIRE_ATOMIC_UPDATES/);

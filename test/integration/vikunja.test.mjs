@@ -10,7 +10,8 @@ import { startMcp,listen,cleanEnv } from '../helpers/harness.mjs';
 
 // This suite never uses a running user instance. It starts a disposable binary
 // with a fresh SQLite database and file directory, then removes its own state.
-test('Vikunja 2.7.1 API contracts and persistence', {skip:!process.env.TEST_VIKUNJA_BINARY,timeout:90_000},async t=>{
+const expectedVersion=process.env.TEST_VIKUNJA_VERSION??'2.7.1';
+test(`Stock Vikunja ${expectedVersion} API contracts and persistence`, {skip:!process.env.TEST_VIKUNJA_BINARY,timeout:90_000},async t=>{
   const binary=resolve(process.env.TEST_VIKUNJA_BINARY);
   const dir=await mkdtemp(join(tmpdir(),'vikunja-integration-'));
   await mkdir(join(dir,'files'));
@@ -48,11 +49,18 @@ test('Vikunja 2.7.1 API contracts and persistence', {skip:!process.env.TEST_VIKU
   }
   try {
     await start();
-    const info=await api('/info');assert.match(info.version,/2\.7\.1/);
+    const info=await api('/info');assert.equal(info.version.replace(/^v/,''),expectedVersion);
     await api('/register','POST',{username:'integration',password:'integration-password-123!',email:'integration@example.test'});
     token=(await api('/login','POST',{username:'integration',password:'integration-password-123!'})).token;
     const user=await api('/user');
-    mcp=await startMcp(url,{VIKUNJA_TOKEN:token,VIKUNJA_REQUIRE_ATOMIC_UPDATES:'0'});
+    mcp=await startMcp(url,{VIKUNJA_TOKEN:token});
+    await t.test('default mode advertises the stock fallback for all eight update tools',async()=>{
+      const health=await call('vikunja_health');
+      assert.equal(health.updateMode,'stock');assert.equal(health.backendVersion,info.version);
+      assert.equal(health.atomicUpdatesRequired,false);
+      assert.deepEqual(health.supportedUpdateTools.toSorted(),['update_task','complete_task','move_task_to_project','set_task_due_date','set_task_reminders','set_task_repeat','update_project','update_label'].toSorted());
+      assert.deepEqual(health.unsupportedOperations,['clear_nonempty_project_description']);
+    });
     const project=(await call('create_project',{title:'Integration project',identifier:'TEST',description:'Keep project description'}));
     const task=await call('create_task',{projectId:project.id,title:'Keep task',description:'Keep description',dueDate:'2027-01-01T00:00:00Z'});
     const taskId=task.id;

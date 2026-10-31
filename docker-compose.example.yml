@@ -1,9 +1,6 @@
 services:
   vikunja:
-    image: vikunja-mcp-backend:2.7.1-atomic-fields.1
-    build:
-      context: .
-      dockerfile: upstream/vikunja.Dockerfile
+    image: vikunja/vikunja:2.7.1
     # The image runs as uid 1000. Provision the host directories with this owner.
     volumes:
       - ./data/vikunja/db:/db
@@ -31,7 +28,7 @@ services:
       VIKUNJA_TOKEN: ${VIKUNJA_TOKEN:?Set VIKUNJA_TOKEN}
       VIKUNJA_MCP_API_KEY: ${VIKUNJA_MCP_API_KEY:?Set VIKUNJA_MCP_API_KEY}
       VIKUNJA_TIMEOUT_MS: 10000
-      VIKUNJA_REQUIRE_ATOMIC_UPDATES: ${VIKUNJA_REQUIRE_ATOMIC_UPDATES:-1}
+      VIKUNJA_REQUIRE_ATOMIC_UPDATES: ${VIKUNJA_REQUIRE_ATOMIC_UPDATES:-0}
     depends_on:
       - vikunja
     read_only: true

@@ -62,7 +62,7 @@ export async function fixture() {
   const state={
     task:{id:1,title:'Original',description:'Keep description',project_id:1,done:false,priority:1,percent_done:0,due_date:'2027-01-01T00:00:00Z',assignees:[{id:5}],reminders:[{reminder:'2026-12-31T00:00:00Z'}],is_favorite:true},
     project:{id:1,title:'Original project',description:'Keep project',is_archived:false,parent_project_id:0},
-    label:{id:1,title:'Original label',description:'Keep label',hex_color:'112233'},atomicSupport:false,
+    label:{id:1,title:'Original label',description:'Keep label',hex_color:'112233'},atomicSupport:false,version:'2.7.1',
     calls:[],upload:{success:[{id:77,task_id:1,file:{name:'fixture.txt',size:7}}],errors:null},
     beforeWrite:undefined, failWrite:false, reads:0, delay:0, pagination:{},
     taskLabels:[{id:7,title:'Label'}], repeatLabelPage:false, emptyLabelPage:undefined,
@@ -75,7 +75,7 @@ export async function fixture() {
     state.calls.push({method:req.method,path:url.pathname,query:url.searchParams,body,headers:req.headers});
     res.setHeader('Content-Type','application/json');
     const send=(data,status=200)=>{res.statusCode=status;res.end(JSON.stringify(data));};
-    if(url.pathname==='/api/v1/info' && req.method==='GET') return send({atomic_field_updates:state.atomicSupport?1:0});
+    if(url.pathname==='/api/v1/info' && req.method==='GET') return send({version:state.version,atomic_field_updates:state.atomicSupport?1:0});
     if(/^\/api\/v2\/(tasks|projects|labels)\/1\/fields$/.test(url.pathname) && req.method==='POST') {
       if(state.failWrite) {const status=typeof state.failWrite==='number'?state.failWrite:503;state.failWrite=false;return send({detail:'Fixture field route failure'},status);}
       if(state.beforeWrite) {const fn=state.beforeWrite;state.beforeWrite=undefined;fn(state);}

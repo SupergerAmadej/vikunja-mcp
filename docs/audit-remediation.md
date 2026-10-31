@@ -2,7 +2,7 @@
 
 ## Security refresh (30 October 2026)
 
-The default backend now builds **2.7.1+atomic-fields.1**, rebased onto upstream
+The optional patched backend builds **2.7.1+atomic-fields.1**, rebased onto upstream
 commit `5619c4a9f66ddfc13f7bbba24ada07c3e82ae7a0`. This incorporates the 2.7.1
 security fixes, including the account-deletion privilege escalation and webhook
 task disclosure. The active patch, source archive and changed-file hashes are

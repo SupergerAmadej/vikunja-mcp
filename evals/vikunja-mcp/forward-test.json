@@ -1,17 +1,22 @@
 {
-  "recordedAt": "2026-10-30T20:04:29.868Z",
+  "recordedAt": "2026-10-31T07:51:55.536Z",
   "method": "Independent Codex agent, offline simulation; no live tools or task writes",
   "skillFiles": {
     "agents/openai.yaml": "e76d5118bbc165e604b47fd77e8f8325972fe1fdc98a5f117aebf23fe68dbda1",
-    "references/tool-contract.md": "c8d0a899615b260ba78b903eb1c760ea013afd2dd3470e469c7e9718f909ba4f",
-    "references/workflows.md": "78e6487589f4d39fd9a456fdf56c6c09e06cb21564ad64fe2815350572b55091",
-    "SKILL.md": "051513ee94062a30bdb09fa23358a8e3fd76fd469da36fadbf8d274feabaedd9"
+    "references/tool-contract.md": "bd8cc4670a51708f46b22a1bf189ed1d976f9aaa4fdc92d975d5fa9f1e5f8418",
+    "references/workflows.md": "1a0a12de6070e81826187426b3f3ba2a278bd063bdb8623dfc201ab6952012f8",
+    "SKILL.md": "267ee4831fc96f56c1a0d8c587359b111b37bbafcd9452b936e32646672a9a90"
   },
   "claudeRuntimeTested": false,
   "cases": [
     {
       "id": "collection-and-review",
       "toolCalls": [
+        {
+          "server": "vikunja-local",
+          "tool": "vikunja_health",
+          "arguments": {}
+        },
         {
           "server": "vikunja-local",
           "tool": "get_task_by_identifier",
@@ -84,16 +89,21 @@
           }
         }
       ],
-      "finalAnswer": "Updated local OPS-17 (task 201): added Alex (42), kept Pat (7) and Kim (8), retained the existing reminder, and added a reminder 15 minutes before its deadline. The new reminder is currently October 23 at 11:45 in Europe/Ljubljana.\n\nAll open tasks in Ops (project 101), with no date filter:\n\n- OPS-17 (201): Check integration\n- Task 202: Publish notes\n\nCoverage is complete across both pages; completed tasks are excluded."
+      "finalAnswer": "Added Alex (user 42) to OPS-17 (task 201), keeping Pat (7) and Kim (8). Preserved the existing reminder at 2026-10-23 08:00 UTC and added a reminder 15 minutes before its deadline.\n\nAll open tasks in Ops (project 101), covering both pages:\n\n- OPS-17 / 201 — Check integration\n- 202 — Publish notes"
     },
     {
       "id": "ambiguous-instance",
       "toolCalls": [],
-      "finalAnswer": "Which Vikunja instance should I use—local or remote—for “Book flights” in Work?"
+      "finalAnswer": "Should I create Book flights in Work on local or remote Vikunja?"
     },
     {
       "id": "partial-child-create",
       "toolCalls": [
+        {
+          "server": "vikunja-local",
+          "tool": "vikunja_health",
+          "arguments": {}
+        },
         {
           "server": "vikunja-local",
           "tool": "get_task_by_identifier",
@@ -118,11 +128,16 @@
           }
         }
       ],
-      "finalAnswer": "Created Draft changelog as local REL-10 (task 302) in project 103. Linking it under REL-9 (301) failed with permission denied (403). REL-10 remains created and unlinked; the link requires permission to create the relation."
+      "finalAnswer": "Created Draft changelog as REL-10 (task 302) in project 103. Linking it under REL-9 (301) failed with permission denied (403), so the new task exists without that parent link. Linking requires permission to create the relation."
     },
     {
       "id": "uncertain-recurring-completion",
       "toolCalls": [
+        {
+          "server": "vikunja-local",
+          "tool": "vikunja_health",
+          "arguments": {}
+        },
         {
           "server": "vikunja-local",
           "tool": "get_task_by_identifier",
@@ -145,7 +160,107 @@
           }
         }
       ],
-      "finalAnswer": "The single completion request for local OPS-22 (401) timed out. A follow-up read shows it open with its deadline advanced from October 21 to October 22 at 10:00 in Europe/Ljubljana, consistent with the occurrence completing and the recurring task reopening. The timeout leaves the write acknowledgment uncertain. I did not retry, to avoid completing another occurrence."
+      "finalAnswer": "The completion call for OPS-22 (401) timed out. A follow-up read shows it open with its deadline advanced from 21 October to 22 October 2026 at 10:00 Europe/Ljubljana, consistent with completing one recurring occurrence and reopening the next. The write outcome remains uncertain; I did not retry completion."
+    },
+    {
+      "id": "stock-supported-updates",
+      "toolCalls": [
+        {
+          "server": "vikunja-local",
+          "tool": "vikunja_health",
+          "arguments": {}
+        },
+        {
+          "server": "vikunja-local",
+          "tool": "get_task",
+          "arguments": {
+            "taskId": 501
+          }
+        },
+        {
+          "server": "vikunja-local",
+          "tool": "get_task",
+          "arguments": {
+            "taskId": 502
+          }
+        },
+        {
+          "server": "vikunja-local",
+          "tool": "update_task",
+          "arguments": {
+            "taskId": 501,
+            "title": "Ready"
+          }
+        },
+        {
+          "server": "vikunja-local",
+          "tool": "set_task_due_date",
+          "arguments": {
+            "taskId": 501,
+            "dueDate": "2027-01-11T09:00:00+01:00"
+          }
+        },
+        {
+          "server": "vikunja-local",
+          "tool": "complete_task",
+          "arguments": {
+            "taskId": 502
+          }
+        }
+      ],
+      "finalAnswer": "Renamed task 501 to Ready and set its deadline to 11 January 2027 at 09:00 Europe/Ljubljana (08:00 UTC). Its description remains Keep this. Completed task 502, Finish me. The updates included only the requested fields."
+    },
+    {
+      "id": "stock-unsupported-project-clear",
+      "toolCalls": [
+        {
+          "server": "vikunja-local",
+          "tool": "vikunja_health",
+          "arguments": {}
+        },
+        {
+          "server": "vikunja-local",
+          "tool": "get_project",
+          "arguments": {
+            "projectId": 601
+          }
+        }
+      ],
+      "finalAnswer": "I couldn’t apply the combined edit: this stock Vikunja instance cannot clear a nonempty project description. Project 601 remains Old name with its existing description; no changes were written. Performing both changes together requires an instance with supported atomic field updates."
+    },
+    {
+      "id": "strict-unpatched-server",
+      "toolCalls": [
+        {
+          "server": "vikunja-local",
+          "tool": "vikunja_health",
+          "arguments": {}
+        },
+        {
+          "server": "vikunja-local",
+          "tool": "get_task",
+          "arguments": {
+            "taskId": 701
+          }
+        }
+      ],
+      "finalAnswer": "Task 701: Pending approval — open. Completion is blocked because this instance requires atomic field updates, but its backend does not advertise protocol 1. No changes were written. The server needs the required atomic-update capability before completion can proceed."
+    },
+    {
+      "id": "known-denied-expansion",
+      "toolCalls": [
+        {
+          "server": "vikunja-local",
+          "tool": "get_task",
+          "arguments": {
+            "taskId": 801,
+            "expand": [
+              "comments"
+            ]
+          }
+        }
+      ],
+      "finalAnswer": "Task 801: Readable task.\n\nComment 11: Keep moving."
     }
   ]
 }

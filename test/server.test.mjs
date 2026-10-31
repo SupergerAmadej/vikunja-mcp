@@ -11,8 +11,8 @@ import { fixture,startMcp } from './helpers/harness.mjs';
 let api,mcp,originalTask,originalProject;
 before(async()=>{
   api=await fixture(); originalTask=structuredClone(api.state.task); originalProject=structuredClone(api.state.project);
-  // Exercise the retained stock compatibility path explicitly.
-  mcp=await startMcp(api.url,{VIKUNJA_REQUIRE_ATOMIC_UPDATES:'0'});
+  // The default must work against an unpatched backend.
+  mcp=await startMcp(api.url);
 });
 after(async()=>{await mcp?.close();await api?.close();});
 beforeEach(()=>{
@@ -137,6 +137,13 @@ test('health is minimal and readiness requires an authenticated upstream check',
   assert.equal((await fetch(`${mcp.url}/readyz`,{headers:{'X-API-Key':'test-mcp-key'}})).status,200);
 });
 
+test('tool health reports stock capabilities before a caller chooses a mutation',async()=>{
+  const result=success(await call('vikunja_health'));
+  assert.equal(result.backendVersion,'2.7.1');assert.equal(result.updateMode,'stock');
+  assert.equal(result.atomicUpdatesRequired,false);assert.equal(result.supportedUpdateTools.length,8);
+  assert.deepEqual(result.unsupportedOperations,['clear_nonempty_project_description']);
+});
+
 test('configured remote origins work and transport request capacity is bounded',async()=>{
   const other=await startMcp(api.url,{VIKUNJA_MCP_ALLOWED_ORIGINS:'https://client.example',VIKUNJA_MCP_MAX_CONCURRENT_REQUESTS:'1'});
   try {
@@ -207,14 +214,28 @@ test('an advertised field route failure never falls back to a replacement write'
   } finally {await other.close();}
 });
 
-test('default atomic requirement rejects writes and readiness on an unpatched backend',async()=>{
-  const other=await startMcp(api.url);
+test('explicit atomic requirement rejects writes and readiness on an unpatched backend',async()=>{
+  const other=await startMcp(api.url,{VIKUNJA_REQUIRE_ATOMIC_UPDATES:'1'});
   try {
+    const health=(await other.rpc('tools/call',{name:'vikunja_health',arguments:{}})).data.result.structuredContent;
+    assert.equal(health.updateMode,'blocked');assert.deepEqual(health.supportedUpdateTools,[]);
     const result=(await other.rpc('tools/call',{name:'update_task',arguments:{taskId:1,title:'Do not write'}})).data.result;
     assert.equal(result.isError,true);assert.match(result.content[0].text,/does not advertise protocol 1/);
     assert.ok(api.state.calls.every(c=>c.method==='GET'));assert.equal(api.state.task.title,originalTask.title);
     assert.equal((await fetch(`${other.url}/readyz`,{headers:{'X-API-Key':'test-mcp-key'}})).status,503);
   } finally {await other.close();}
+});
+
+test('unverified stock versions expose blocked capabilities and never receive update writes',async()=>{
+  api.state.version='2.3.0';
+  const other=await startMcp(api.url);
+  try {
+    const health=(await other.rpc('tools/call',{name:'vikunja_health',arguments:{}})).data.result.structuredContent;
+    assert.equal(health.updateMode,'blocked');assert.equal(health.backendVersion,'2.3.0');
+    const result=(await other.rpc('tools/call',{name:'update_task',arguments:{taskId:1,title:'Do not write'}})).data.result;
+    assert.equal(result.isError,true);assert.match(result.content[0].text,/Stock updates are verified only/);
+    assert.ok(api.state.calls.every(c=>c.method==='GET'));assert.equal(api.state.task.title,originalTask.title);
+  } finally {await other.close();api.state.version='2.7.1';}
 });
 
 test('queues recover from an upstream failure without replaying the failed edit',async()=>{

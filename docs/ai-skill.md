@@ -51,6 +51,9 @@ and [Claude Code skill documentation](https://code.claude.com/docs/en/skills).
 - Add labels or assignees while preserving existing collection members.
 - Use comments, relations and attachments with their supported tool semantics.
 - Reconcile uncertain writes instead of duplicating creates or recurring completions.
+- Inspect backend update capabilities before the first affected write; use the
+  stock fallback when supported and skip unsupported operations or strict-mode
+  blocks. Retain known authorization failures until the instance changes.
 
 The skill does not add missing MCP capabilities. User lookup, view/bucket
 discovery, bucket moves, arbitrary filters and attachment-content retrieval are
@@ -84,13 +87,14 @@ it requires Python with PyYAML.
 
 An offline forward-test uses fictional tasks and tool responses to inspect
 collection preservation, multi-page reviews, instance ambiguity, partial child
-creation and uncertain recurring completion. This is separate from the 42-tool
+creation, uncertain recurring completion, stock updates, blocked updates and
+known-denied expansions. This is separate from the 42-tool
 live deployment tests. It does not establish Claude model execution, benchmark
 improvements over a baseline or a general success rate. Structural validation,
 example checks and observed agent scenarios must be reported separately.
 
 The recorded trial and fictional inputs are in
-[`evals/vikunja-mcp`](../evals/vikunja-mcp/requests.json). Four cases and thirteen
+[`evals/vikunja-mcp`](../evals/vikunja-mcp/requests.json). Eight cases and twenty-seven
 schema-valid planned calls passed the recorded state/scope checks. Rerun the
 agent trial in an isolated environment when changing the skill's instructions;
 the trace checker detects changes using hashes of the shipped files. It checks

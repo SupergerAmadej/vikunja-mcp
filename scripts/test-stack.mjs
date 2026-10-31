@@ -1,4 +1,4 @@
-// Build and exercise the actual production Compose services using only fresh,
+// Build and exercise the optional patched production Compose services using only fresh,
 // disposable data. Never starts the default Compose project or reads .env.
 import assert from 'node:assert/strict';
 import { randomUUID,createHash } from 'node:crypto';
@@ -20,8 +20,11 @@ function docker(args,options={}) {
   return (execFileSync('docker',args,{cwd:root,env,encoding:'utf8',maxBuffer:16*1024*1024,windowsHide:true,...options})??'').trim();
 }
 const config=JSON.parse(docker(['compose','--project-name',project,'--env-file',envFile,'-f','docker-compose.example.yml','config','--format','json']));
-assert.equal(config.services.vikunja.build.dockerfile,'upstream/vikunja.Dockerfile');
-assert.equal(String(config.services['vikunja-mcp'].environment.VIKUNJA_REQUIRE_ATOMIC_UPDATES),'1');
+assert.equal(config.services.vikunja.image,'vikunja/vikunja:2.7.1');
+assert.equal(String(config.services['vikunja-mcp'].environment.VIKUNJA_REQUIRE_ATOMIC_UPDATES),'0');
+// Keep this proof focused on the optional patched backend and its permissions.
+config.services.vikunja.build={context:root,dockerfile:'upstream/vikunja.Dockerfile'};
+config.services['vikunja-mcp'].environment.VIKUNJA_REQUIRE_ATOMIC_UPDATES='1';
 const services=['vikunja','vikunja-mcp'];
 for(const service of services) {
   config.services[service].image=`vikunja-mcp:${project}-${service}`;

@@ -1,0 +1,69 @@
+{
+  "checkedAt": "2026-10-31T08:59:56.783Z",
+  "clientDate": "2026-10-31",
+  "mcpVersion": "0.2.1",
+  "toolSchemaSha256": "b9ad9a0b394a489f5cde8d4e036f0241d509df698ce2379755e13e35051d8b81",
+  "defaultRequireAtomicUpdates": false,
+  "defaultComposeBackend": "vikunja/vikunja:2.7.1",
+  "supportedStockVersions": [
+    "2.7.0",
+    "2.7.1"
+  ],
+  "fallbackTools": [
+    "update_task",
+    "complete_task",
+    "move_task_to_project",
+    "set_task_due_date",
+    "set_task_reminders",
+    "set_task_repeat",
+    "update_project",
+    "update_label"
+  ],
+  "verification": {
+    "regressionWindows": {
+      "passed": 58,
+      "failed": 0
+    },
+    "realBackends": [
+      {
+        "backend": "Stock Vikunja 2.7.0, disposable SQLite, default automatic mode",
+        "passed": 13,
+        "failed": 0
+      },
+      {
+        "backend": "Stock Vikunja 2.7.1, disposable SQLite, default automatic mode",
+        "passed": 13,
+        "failed": 0
+      }
+    ],
+    "offlineSkill": {
+      "cases": 8,
+      "schemaValidCalls": 27,
+      "stateScopeAssertions": "passed",
+      "liveTaskWrites": false
+    },
+    "structuralValidation": "Skill Creator quick_validate.py passed",
+    "composeDefaults": "Verified through docker compose config using disposable settings; no containers started",
+    "explicitStrictMode": "Retained; capabilities report blocked operations and writes fail before POST",
+    "unknownBackendVersions": "Capabilities report blocked updates; no update POST is made",
+    "failedAdvertisedAtomicWrites": "Never retried through stock API"
+  },
+  "knownLimits": [
+    "Stock updates cannot clear a non-empty project description.",
+    "Stock updates do not protect against concurrent edits by independent clients.",
+    "Capability discovery does not certify every token permission or guarantee network availability."
+  ],
+  "installedSkillMatchesSource": true,
+  "liveDeploymentChanged": false,
+  "sourceHashes": {
+    "src/atomic-updates.ts": "7aa83b884364138a8d4c9fdf71c98d6b384c5843db3cc8416bfe5176c5f25a4f",
+    "src/config.ts": "2846e883bc0b47a535a15b5e00f08cb130cd4990712fb62c114fd00458d9aa3f",
+    "src/index.ts": "551ec7d7a7fcf340f34456a4f2a62fb750ee23c43cc0721317799f83e3fa64cb",
+    "test/atomic-updates.test.mjs": "8b25a2b0aa3d8270685cf9f34b94d4b2842cceca78b9c5c56c427865426f002e",
+    "test/server.test.mjs": "a2b6b89c4f790ea81167822ba5fa7e0221c174b9988a4daa671dafbe6e3a6430",
+    "test/integration/vikunja.test.mjs": "eb18ab32ba25d906922f197e4ffb4aab3bf014cb5bd44976d2718a9e711db7df",
+    "docker-compose.example.yml": "97a46977cd0e71898607c52e7ed0a518bc69b1d6883df7969729d7a394b90ecd"
+  },
+  "verificationScope": "Prepared commit tree, excluding unrelated working-tree Host/Origin and upload changes",
+  "sourceHashFormat": "SHA-256 of UTF-8 source normalized to LF (Git index content)"
+}

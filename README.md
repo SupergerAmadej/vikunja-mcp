@@ -17,7 +17,7 @@ token and return the updated or affected object whenever Vikunja provides one.
 
 | Tool | Description |
 | --- | --- |
-| `vikunja_health` | Verifies that the configured Vikunja API token and base URL work. |
+| `vikunja_health` | Verifies connectivity and reports backend version, update mode, supported update tools and known operation limits. |
 | `get_current_user` | Fetches the Vikunja user associated with the configured API token, with configured/token-owner fallbacks when `/user` is not in scope. |
 
 ### Projects
@@ -38,7 +38,7 @@ token and return the updated or affected object whenever Vikunja provides one.
 | `get_task` | Fetches one task by numeric id, with optional Vikunja `expand` values. |
 | `get_task_by_identifier` | Fetches one task by human-facing identifier such as `PROJ-123`. |
 | `create_task` | Creates a task in a project. |
-| `update_task` | Applies selected task fields through the atomic field-update API; `percentDone` uses 0 to 100. |
+| `update_task` | Applies selected task fields using atomic updates when available or the stock API fallback; `percentDone` uses 0 to 100. |
 | `delete_task` | Deletes a task. |
 | `complete_task` | Marks a task as done. |
 | `move_task_to_project` | Moves a task by updating its `project_id`. |
@@ -134,7 +134,7 @@ parsing. `/healthz` reports process liveness without exposing the upstream URL.
 | `VIKUNJA_BASE_URL` | No | `http://vikunja:3456` | Vikunja root URL or full `/api/v1` URL. |
 | `VIKUNJA_API_URL` | No | - | Backwards-compatible alternative to `VIKUNJA_BASE_URL`. |
 | `VIKUNJA_TIMEOUT_MS` | No | `10000` | Upstream Vikunja request timeout in milliseconds. |
-| `VIKUNJA_REQUIRE_ATOMIC_UPDATES` | No | `1` | Require the reviewed backend extension for affected mutations and readiness. Explicit `0` enables stock compatibility with the limits below. |
+| `VIKUNJA_REQUIRE_ATOMIC_UPDATES` | No | `0` | Prefer atomic updates when advertised, otherwise use verified stock compatibility. Explicit `1` requires the optional backend extension. |
 | `PORT` | No | `9090` | HTTP port for this MCP server. |
 | `HOST` | No | `127.0.0.1` | HTTP bind host; the Docker image explicitly uses `0.0.0.0`. |
 | `VIKUNJA_MCP_ALLOWED_HOSTS` | No | `localhost:9090,127.0.0.1:9090,[::1]:9090` | Exact allowed Host headers; default ports follow `PORT`. |
@@ -264,7 +264,7 @@ browser clients. Requests from native clients without an Origin remain supported
 - Removal and replacement tools carry destructive annotations. These inform
   clients and do not enforce permission or confirmation by themselves.
 - A shared queue serializes task, project and label edits within one server
-  process. The default backend applies only explicitly requested fields inside
+  process. The optional atomic backend applies only explicitly requested fields inside
   its update transaction, preserving unrelated edits from independent writers.
 - On stock Vikunja, the v1 updater also handles reminders, assignees and favorites, so those
   values are retained from the current task. Project, label and reminder writes
@@ -282,14 +282,25 @@ browser clients. Requests from native clients without an Origin remain supported
 
 ## Supported API and migration notes
 
-The default deployment targets **Vikunja 2.7.1+atomic-fields.1** and Node.js 24 LTS.
-It uses the existing v1 API and dedicated v2 atomic field-update routes. Scoped
-API tokens need `projects.fields`, `tasks.fields` and `labels.fields` for the
-corresponding edits, plus read and subresource permissions used by their tools.
-The separate stock 2.7.1 integration suite verifies explicit compatibility mode
-(`VIKUNJA_REQUIRE_ATOMIC_UPDATES=0`). Stock scalar task updates require
+The default deployment uses official, unpatched **Vikunja 2.7.1** and Node.js 24
+LTS. Stock **2.7.0** and **2.7.1** are verified compatibility targets; 2.7.1 is
+recommended for upstream security fixes. No backend patch is required. The MCP
+server prefers the optional atomic extension when advertised and otherwise uses
+the stock API. Set `VIKUNJA_REQUIRE_ATOMIC_UPDATES=1` only to require the extension.
+Its dedicated v2 routes need `projects.fields`, `tasks.fields` and `labels.fields`
+token permissions; stock mode uses the normal update permissions.
+Stock scalar task updates require
 `POST /tasks/bulk`; there is no fallback to a full-object scalar task write when
-that endpoint is missing. Older releases are not assumed compatible.
+that endpoint is missing. Unverified backend versions are blocked for the eight
+field-update tools before any write; other tools retain their own API requirements.
+
+Call `vikunja_health` before choosing updates on an unfamiliar instance. It reports
+`backendVersion`, `atomicFieldUpdates`, `atomicUpdatesRequired`, `updateMode`
+(`atomic`, `stock` or `blocked`), `supportedUpdateTools`, `unsupportedOperations`,
+`blockedReason` and `limitations`. Stock mode supports all eight affected tools,
+but cannot clear a non-empty project description. An explicit strict requirement
+reports blocked tools rather than silently disabling the operator's setting.
+Capability discovery does not certify token permissions for every operation.
 
 `set_task_position` now requires `projectViewId`. `percentDone` accepts 0 to 100
 and is converted to the upstream 0 to 1 scale; task responses retain that upstream
@@ -331,8 +342,9 @@ and reopen it; inspect the returned state before reporting completion.
 
 Vikunja 2.7.1 does not persist an empty project description over an existing
 non-empty value. Such `update_project` requests now fail before writing any
-fields, rather than claiming success. The default backend extension below adds
-an explicit field-scoped clear operation.
+fields, rather than claiming success. The optional backend extension below adds
+an explicit field-scoped clear operation. The skill reads the capability report
+and skips this unsupported stock operation instead of attempting it.
 Task identifier lookup accepts numeric-leading and encoded project prefixes.
 Purely numeric or dot project identifiers are resolved through project listing
 (including archived projects) to avoid the API confusing an identifier with an ID.
@@ -362,8 +374,8 @@ addresses F03 across independent MCP clients and edits committed by other client
 between the MCP read and write. Its [source manifest](upstream/vikunja-2.7.1-atomic-fields.json)
 pins upstream commit `5619c4a9f66ddfc13f7bbba24ada07c3e82ae7a0`, the source archive
 digest, the patch digest and each changed file. The patch preserves upstream's
-AGPL license notices. The extension is adopted by the project's default Compose
-deployment; no existing user deployment has been changed or upstream submission
+AGPL license notices. The extension is an optional alternative to the stock
+Compose deployment; no existing user deployment has been changed or upstream submission
 made. The production [build instructions](upstream/README.md) describe the full
 frontend/API image and its corresponding-source download.
 
@@ -378,13 +390,13 @@ A missing, denied or failed field-update route is an error; it is never retried
 as an unsafe replacement. Scoped tokens need the corresponding `fields` POST
 permissions in addition to their existing read permissions.
 
-`VIKUNJA_REQUIRE_ATOMIC_UPDATES` defaults to **1**, including in Compose. Affected
-mutations and authenticated readiness fail when protocol 1 is absent. Explicit
-`0` opts into stock 2.7.1 compatibility and its documented F03 limits; those
-limits are not fixed on an unpatched backend. This default changes the behavior
-of existing installations that omit the variable: upgrade the backend first,
-grant the token the `fields` permissions, then restart the MCP process so
-discovery runs again. Check authenticated `/readyz` before opening access.
+`VIKUNJA_REQUIRE_ATOMIC_UPDATES` defaults to **0**, including in Compose. A missing
+extension selects the verified stock fallback. Explicit **1** keeps strict mode:
+affected mutations and readiness fail when protocol 1 is absent. Stock reminder,
+project and label writes retain the documented cross-client overwrite limits.
+Existing deployments explicitly setting **1** keep that choice; an operator who
+wants stock fallback must change it to **0** and recreate the MCP container.
+Restart after backend changes so capability discovery runs again.
 
 Run `npm run test:atomic` with Docker available to reproduce the complete proof.
 It verifies the source and patch digests, builds unpatched and patched backends,
@@ -416,8 +428,8 @@ For an existing server, follow the [Docker Compose upgrade guide](docs/server-up
 It covers preserving the current connection and data, adopting the backend
 extension, verifying the result and rolling back.
 
-The Compose example builds the pinned Vikunja 2.7.1+atomic-fields.1 extension,
-including its full frontend, exposes both ports on loopback, and keeps
+The Compose example uses the official pinned Vikunja 2.7.1 image,
+exposes both ports on loopback, and keeps
 the SQLite file set in `data/vikunja/db` and attachments in `data/vikunja/files`.
 Before first startup on Linux, create these directories and give uid 1000 write
 access. Docker Desktop users should also verify that both bind mounts are writable

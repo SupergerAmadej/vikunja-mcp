@@ -16,8 +16,11 @@ ask only when missing information changes the target or intended action.
   Claude may expose different namespace prefixes. Never fall back from a local
   instance to a remote one after an error. If several instances are plausible
   and the target is unclear, resolve that ambiguity before accessing task data.
-- Use `vikunja_health` when establishing or diagnosing a connection, not before
-  every call. Use `get_current_user` when the request depends on the current user;
+- Use `vikunja_health` when establishing a connection and before the first task,
+  project, label or scheduling update when this instance's update capabilities
+  are not already known. Reuse its `updateMode`, `supportedUpdateTools` and
+  `unsupportedOperations` for the session; see [capability routing](references/tool-contract.md#capability-routing).
+  Do not probe a mutation to discover support. Use `get_current_user` when the request depends on the current user;
   retain its reported source and treat missing or placeholder identity fields as
   unknown. A configured fallback identity is not a searchable user directory.
 - Reuse verified IDs. For a human task identifier use `get_task_by_identifier`.
@@ -93,5 +96,9 @@ its coverage limits in the answer.
   to check the basic read while preserving the missing-data limit.
 
 Report the affected IDs/identifiers, the confirmed outcome and any failed steps.
+Remember denied operations and expansions on the selected instance. Skip known
+failures until permissions, configuration or deployment changes; use a supported
+numeric-ID read or basic read when it satisfies the request. An error on one
+route does not prove the entire token is invalid.
 For reviews, include the project/status/date scope and whether coverage is full
 or bounded. Describe success from the returned or reconciled state, not intent.

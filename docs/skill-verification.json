@@ -1,13 +1,14 @@
 {
-  "checkedAt": "2026-10-30T20:05:34.941Z",
+  "checkedAt": "2026-10-31T08:59:56.783Z",
+  "clientDate": "2026-10-31",
   "skillName": "vikunja-mcp",
   "mcpVersion": "0.2.1",
-  "toolSchemaSha256": "29e3884bb212eae8979e81047bb741ff0f484f0e353820421c51fe63c32d2f97",
+  "toolSchemaSha256": "b9ad9a0b394a489f5cde8d4e036f0241d509df698ce2379755e13e35051d8b81",
   "sourceFiles": {
     "agents/openai.yaml": "e76d5118bbc165e604b47fd77e8f8325972fe1fdc98a5f117aebf23fe68dbda1",
-    "references/tool-contract.md": "c8d0a899615b260ba78b903eb1c760ea013afd2dd3470e469c7e9718f909ba4f",
-    "references/workflows.md": "78e6487589f4d39fd9a456fdf56c6c09e06cb21564ad64fe2815350572b55091",
-    "SKILL.md": "051513ee94062a30bdb09fa23358a8e3fd76fd469da36fadbf8d274feabaedd9"
+    "references/tool-contract.md": "bd8cc4670a51708f46b22a1bf189ed1d976f9aaa4fdc92d975d5fa9f1e5f8418",
+    "references/workflows.md": "1a0a12de6070e81826187426b3f3ba2a278bd063bdb8623dfc201ab6952012f8",
+    "SKILL.md": "267ee4831fc96f56c1a0d8c587359b111b37bbafcd9452b936e32646672a9a90"
   },
   "installations": [
     "~/.codex/skills/vikunja-mcp"
@@ -15,36 +16,39 @@
   "installationPathsRedacted": true,
   "installedCopiesMatchSource": true,
   "connectionUrlAndSecretsUnchanged": true,
-  "localTokenScopesAdded": [
-    "reactions.read_all",
-    "time_entries.read_all"
-  ],
   "structuralValidation": "Skill Creator quick_validate.py passed",
   "schemaAndBundleTests": {
     "passed": 3,
     "failed": 0
   },
   "offlineForwardTest": {
-    "cases": 4,
-    "schemaValidCalls": 13,
+    "cases": 8,
+    "schemaValidCalls": 27,
     "stateScopeAssertions": "passed",
     "liveTaskWrites": false
   },
   "claudeRuntimeTested": false,
   "claudeInstallationRevalidated": false,
   "bundle": "output/skills/vikunja-mcp.zip",
-  "bundleSha256": "7a622e064c1eefedeb88278813416eba78b39f9fcfef5514ce29ed357b4c7f49",
-  "clientDate": "2026-10-30",
+  "bundleSha256": "3fd0bb9a9df13ff8165254f36fa3e41ee06ea8f52227c99e2bf3c22bde4cb8c2",
   "fullRegressionWindows": {
-    "passed": 52,
+    "passed": 58,
     "failed": 0
   },
-  "realApiIntegration": {
-    "backend": "Vikunja 2.7.1, disposable SQLite",
-    "passed": 12,
-    "failed": 0
-  },
-  "localServerVerification": {
+  "realApiIntegration": [
+    {
+      "backend": "Stock Vikunja 2.7.0, disposable SQLite, default automatic mode",
+      "passed": 13,
+      "failed": 0
+    },
+    {
+      "backend": "Stock Vikunja 2.7.1, disposable SQLite, default automatic mode",
+      "passed": 13,
+      "failed": 0
+    }
+  ],
+  "liveDeploymentChanged": false,
+  "priorLiveServerVerification": {
     "toolsExercised": 42,
     "toolCalls": 89,
     "toolErrors": 0,
@@ -58,5 +62,6 @@
     "report": "output/localtest-post-fix-20261030.json",
     "backupVerified": true,
     "backupOutsideRepository": true
-  }
+  },
+  "verificationScope": "Prepared commit tree, excluding unrelated working-tree Host/Origin and upload changes"
 }

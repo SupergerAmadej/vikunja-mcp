@@ -1,11 +1,15 @@
 # Upgrade an existing Docker Compose server
 
-Updated 30 October 2026 for MCP **0.2.1** and the reviewed Vikunja
-**2.7.1+atomic-fields.1** backend. Commands below run in Bash on a Linux Docker
+Updated 31 October 2026 for MCP **0.2.1**, official stock Vikunja **2.7.0/2.7.1**,
+and the optional **2.7.1+atomic-fields.1** backend. Commands below run in Bash on a Linux Docker
 server, except the explicitly marked Windows transfer step. Replace example
 paths and service names with the ones from your existing deployment.
 Run each step only after the preceding commands succeed. Stop on a failed
 version check, backup, checksum or configuration validation.
+
+An unpatched backend can be kept: build/recreate MCP and use
+`VIKUNJA_REQUIRE_ATOMIC_UPDATES=0`. Backend build, migration and image-replacement
+steps apply only if you choose to upgrade or adopt the optional backend patch.
 
 This is an upgrade of your current stack. Keep its Compose project name,
 database, attachments, networks, ports, upstream URL, JWT secret and MCP API key.
@@ -58,13 +62,14 @@ Choose the matching route:
 | Current backend | Upgrade route |
 | --- | --- |
 | Stock or patched Vikunja 2.7.0 | Upgrade backend and MCP to include the 2.7.1 security fixes. Keep a complete cold backup; upstream database and token-scope migrations run on first startup. |
-| Stock Vikunja 2.7.1 | Recommended: upgrade backend and MCP, with atomic updates required. |
+| Stock Vikunja 2.7.1 | Update MCP only and use automatic stock compatibility. No backend patch is required. |
 | The reviewed patched 2.7.1 backend, advertising numeric `atomic_field_updates: 1` | Update MCP only; keep required mode enabled. |
-| Stock 2.7.1, backend update postponed | MCP-only compatibility mode is available with explicit `VIKUNJA_REQUIRE_ATOMIC_UPDATES=0`. Independent clients can still overwrite unrelated changes through stock update routes; coordinate writers. This does not resolve F03. |
+| Stock 2.7.0 or 2.7.1, keeping the backend | Stock compatibility is the default. Change an existing explicit `VIKUNJA_REQUIRE_ATOMIC_UPDATES=1` to `0` and recreate MCP. Independent clients can still overwrite unrelated changes through stock update routes; coordinate writers. |
 | Any other Vikunja version | First test the intended backend transition against a restored copy of your data. Do not replace a newer backend with the pinned 2.7.1 build or assume an older database can be upgraded safely without following its migration requirements. |
 
 The companion patch adds no migrations beyond stock 2.7.1. The completed backend
-verification covers stock and patched **2.7.1**, rather than every Vikunja release.
+verification covers stock **2.7.0** and **2.7.1**, plus patched **2.7.1**, rather
+than every Vikunja release.
 The upstream upgrade from 2.7.0 does include migrations. To roll it back, restore
 the matching cold database/files backup as well as the old images. Do not use
 MCP-only compatibility mode to postpone the 2.7.1 security fixes.
@@ -209,7 +214,7 @@ services:
       dockerfile: Dockerfile
     environment:
       # Retain existing VIKUNJA_BASE_URL, VIKUNJA_TOKEN, VIKUNJA_MCP_API_KEY, etc.
-      VIKUNJA_REQUIRE_ATOMIC_UPDATES: ${VIKUNJA_REQUIRE_ATOMIC_UPDATES:-1}
+      VIKUNJA_REQUIRE_ATOMIC_UPDATES: ${VIKUNJA_REQUIRE_ATOMIC_UPDATES:-0}
       VIKUNJA_MCP_ALLOWED_HOSTS: ${VIKUNJA_MCP_ALLOWED_HOSTS:?Set VIKUNJA_MCP_ALLOWED_HOSTS}
 ```
 
@@ -218,7 +223,7 @@ URL of `http://mcp.example.com:9090/mcp`, its Host must be allowed. Replace this
 example hostname with the one used by your clients:
 
 ```dotenv
-VIKUNJA_REQUIRE_ATOMIC_UPDATES=1
+VIKUNJA_REQUIRE_ATOMIC_UPDATES=0
 VIKUNJA_MCP_ALLOWED_HOSTS=mcp.example.com:9090,127.0.0.1:9090,localhost:9090
 ```
 
@@ -231,7 +236,8 @@ set it to the exact HTTP(S) origin, for example `https://tasks.example.com`.
 No wildcards or trailing slash. Merely adding a variable to `.env` does not pass
 it into a container unless the Compose service references it or uses `env_file`.
 
-For the temporary stock compatibility route, set the mode to **`0`**, explicitly.
+For stock compatibility, use **`0`** (the default). Set **`1`** only when requiring
+the optional atomic extension.
 Use only `0` or `1`. Required mode on an unpatched backend makes readiness fail
 and rejects the affected updates.
 

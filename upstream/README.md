@@ -6,7 +6,8 @@ copyright and license notices; the repository's root MIT license does not
 replace these terms.
 
 `vikunja.Dockerfile` builds Vikunja **2.7.1+atomic-fields.1** with its complete
-frontend and API. The Compose example uses this image by default. The original
+frontend and API. It is an optional alternative to the official stock Compose
+image. The original
 archive, patch and changed files are verified against the adjacent manifest
 before compilation. Both build images are pinned by digest; frontend and Go
 dependencies use the upstream lockfiles. The container runs as uid/gid 1000.
@@ -38,7 +39,7 @@ For an existing deployment, stop writers and take a cold backup of the complete
 database and attachment directories before switching images. This patch adds no
 database migrations beyond stock 2.7.1. Rebuild the backend, grant the MCP token
 the relevant `fields` POST permissions, and restart the MCP process. Keep
-`VIKUNJA_REQUIRE_ATOMIC_UPDATES=1` (the default). Authenticated `/readyz` must
+`VIKUNJA_REQUIRE_ATOMIC_UPDATES=1` when atomic updates are required. Authenticated `/readyz` must
 succeed and `/api/v1/info` must advertise `atomic_field_updates: 1` before use.
 
 Upgrading an existing 2.7.0 backend applies upstream's 2.7.1 migrations, including

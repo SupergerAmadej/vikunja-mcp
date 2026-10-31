@@ -91,6 +91,25 @@
             "hasMore": false,
             "completeness": "partial"
           }
+        },
+        "vikunja_health": {
+          "backendVersion": "2.7.1+atomic-fields.1",
+          "atomicFieldUpdates": true,
+          "atomicUpdatesRequired": false,
+          "updateMode": "atomic",
+          "supportedUpdateTools": [
+            "update_task",
+            "complete_task",
+            "move_task_to_project",
+            "set_task_due_date",
+            "set_task_reminders",
+            "set_task_repeat",
+            "update_project",
+            "update_label"
+          ],
+          "unsupportedOperations": [],
+          "blockedReason": null,
+          "limitations": []
         }
       }
     },
@@ -120,6 +139,25 @@
         "create_subtask_relation": {
           "isError": true,
           "message": "Permission denied: link not written (403)"
+        },
+        "vikunja_health": {
+          "backendVersion": "2.7.1+atomic-fields.1",
+          "atomicFieldUpdates": true,
+          "atomicUpdatesRequired": false,
+          "updateMode": "atomic",
+          "supportedUpdateTools": [
+            "update_task",
+            "complete_task",
+            "move_task_to_project",
+            "set_task_due_date",
+            "set_task_reminders",
+            "set_task_repeat",
+            "update_project",
+            "update_label"
+          ],
+          "unsupportedOperations": [],
+          "blockedReason": null,
+          "limitations": []
         }
       }
     },
@@ -152,6 +190,164 @@
           "due_date": "2026-10-22T08:00:00Z",
           "repeat_after": 86400,
           "repeat_mode": 2
+        },
+        "vikunja_health": {
+          "backendVersion": "2.7.1+atomic-fields.1",
+          "atomicFieldUpdates": true,
+          "atomicUpdatesRequired": false,
+          "updateMode": "atomic",
+          "supportedUpdateTools": [
+            "update_task",
+            "complete_task",
+            "move_task_to_project",
+            "set_task_due_date",
+            "set_task_reminders",
+            "set_task_repeat",
+            "update_project",
+            "update_label"
+          ],
+          "unsupportedOperations": [],
+          "blockedReason": null,
+          "limitations": []
+        }
+      }
+    },
+    {
+      "id": "stock-supported-updates",
+      "request": "In local Vikunja, rename task 501 to Ready, set its deadline to 2027-01-11 at 09:00 Europe/Ljubljana, and complete task 502. Keep all other fields unchanged.",
+      "selectedServer": "vikunja-local",
+      "responses": {
+        "vikunja_health": {
+          "backendVersion": "2.7.0",
+          "atomicFieldUpdates": false,
+          "atomicUpdatesRequired": false,
+          "updateMode": "stock",
+          "supportedUpdateTools": [
+            "update_task",
+            "complete_task",
+            "move_task_to_project",
+            "set_task_due_date",
+            "set_task_reminders",
+            "set_task_repeat",
+            "update_project",
+            "update_label"
+          ],
+          "unsupportedOperations": [
+            "clear_nonempty_project_description"
+          ],
+          "blockedReason": null,
+          "limitations": [
+            "Reminder, project and label writes can overwrite concurrent edits from other clients."
+          ]
+        },
+        "get_task_501": {
+          "id": 501,
+          "title": "Draft",
+          "project_id": 101,
+          "description": "Keep this",
+          "done": false,
+          "due_date": "0001-01-01T00:00:00Z"
+        },
+        "get_task_502": {
+          "id": 502,
+          "title": "Finish me",
+          "project_id": 101,
+          "done": false,
+          "repeat_after": 0
+        },
+        "update_task": {
+          "id": 501,
+          "title": "Ready",
+          "description": "Keep this"
+        },
+        "set_task_due_date": {
+          "id": 501,
+          "title": "Ready",
+          "due_date": "2027-01-11T08:00:00Z"
+        },
+        "complete_task": {
+          "id": 502,
+          "title": "Finish me",
+          "done": true,
+          "repeat_after": 0
+        }
+      }
+    },
+    {
+      "id": "stock-unsupported-project-clear",
+      "request": "In local Vikunja, rename project 601 to New name and clear its description as one edit.",
+      "selectedServer": "vikunja-local",
+      "responses": {
+        "vikunja_health": {
+          "backendVersion": "2.7.0",
+          "atomicFieldUpdates": false,
+          "atomicUpdatesRequired": false,
+          "updateMode": "stock",
+          "supportedUpdateTools": [
+            "update_task",
+            "complete_task",
+            "move_task_to_project",
+            "set_task_due_date",
+            "set_task_reminders",
+            "set_task_repeat",
+            "update_project",
+            "update_label"
+          ],
+          "unsupportedOperations": [
+            "clear_nonempty_project_description"
+          ],
+          "blockedReason": null,
+          "limitations": [
+            "Reminder, project and label writes can overwrite concurrent edits from other clients."
+          ]
+        },
+        "get_project": {
+          "id": 601,
+          "title": "Old name",
+          "description": "This is not empty",
+          "identifier": "OPS"
+        }
+      }
+    },
+    {
+      "id": "strict-unpatched-server",
+      "request": "In local Vikunja, complete task 701 and show its current title and status.",
+      "selectedServer": "vikunja-local",
+      "responses": {
+        "vikunja_health": {
+          "backendVersion": "2.7.0",
+          "atomicFieldUpdates": false,
+          "atomicUpdatesRequired": true,
+          "updateMode": "blocked",
+          "supportedUpdateTools": [],
+          "unsupportedOperations": [
+            "clear_nonempty_project_description"
+          ],
+          "blockedReason": "Atomic field updates are required, but this instance does not advertise protocol 1. No changes were written.",
+          "limitations": []
+        },
+        "get_task": {
+          "id": 701,
+          "title": "Pending approval",
+          "done": false,
+          "repeat_after": 0
+        }
+      }
+    },
+    {
+      "id": "known-denied-expansion",
+      "request": "In local Vikunja, show the title and comments of task 801. In this session, time_entries_count already returned HTTP 401 and the deployment and permissions have not changed.",
+      "selectedServer": "vikunja-local",
+      "responses": {
+        "get_task": {
+          "id": 801,
+          "title": "Readable task",
+          "comments": [
+            {
+              "id": 11,
+              "comment": "Keep moving"
+            }
+          ]
         }
       }
     }

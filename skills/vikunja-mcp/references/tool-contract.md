@@ -8,7 +8,7 @@ the limitation if a required field or tool is absent.
 {
   "mcpVersion": "0.2.1",
   "toolCount": 42,
-  "schemaSha256": "29e3884bb212eae8979e81047bb741ff0f484f0e353820421c51fe63c32d2f97"
+  "schemaSha256": "b9ad9a0b394a489f5cde8d4e036f0241d509df698ce2379755e13e35051d8b81"
 }
 ```
 
@@ -48,6 +48,41 @@ isolate required expansions if necessary. Report unavailable data when it affect
 the answer and identify the relevant read scope; do not change token permissions
 as part of ordinary task work. A successful read may omit expansion fields, so
 absence alone does not establish an empty collection or a zero count.
+
+## Capability routing
+
+Before the first affected write on an unfamiliar instance, call `vikunja_health`.
+Its report describes backend support, not the token's permission for every route.
+Reuse the report until the deployment/configuration changes or a contradictory
+error requires a fresh check.
+
+- `updateMode: "atomic"`: use the requested tool in `supportedUpdateTools`.
+- `updateMode: "stock"`: the eight update tools use standard API compatibility
+  paths on verified stock Vikunja 2.7.0 and 2.7.1. Call a supported tool normally;
+  the skill does not change environment variables or construct HTTP fallbacks.
+- `updateMode: "blocked"`: skip the affected update tools. Explain
+  `blockedReason` and complete independent supported reads or work. An explicit
+  operator requirement for atomic updates must not be disabled by the skill.
+- If an older server omits these fields, use already verified session support.
+  Otherwise explain that capability discovery needs an updated MCP server;
+  do not test support by attempting a write.
+
+The eight tools are `update_task`, `complete_task`, `move_task_to_project`,
+`set_task_due_date`, `set_task_reminders`, `set_task_repeat`, `update_project`,
+and `update_label`. They share the reported update mode.
+
+Stock mode lists `clear_nonempty_project_description` in `unsupportedOperations`.
+Read the project if its description is unknown. When the existing description
+is non-empty, do not call `update_project` with `description: ""`; report the
+unsupported clear. Do not silently omit that requested field or apply the rest
+of the same mixed edit without the user's agreement. An already-empty
+description does not prevent an otherwise supported edit.
+
+Stock writes are serialized within one MCP process. They cannot guarantee
+preservation of concurrent edits by other clients, especially for reminders,
+projects and labels. Do not claim that the fallback provides atomic guarantees.
+Unknown backend versions are blocked for these writes until verified support
+is added; other read/create/subresource tools retain their own capabilities.
 
 ## Dates, reminders and repetition
 
@@ -136,10 +171,10 @@ upload is not full success. Do not re-upload successful files when reconciling
 failures. Attachment metadata alone cannot support a summary of file contents;
 the current tool set has no attachment-download tool.
 
-The supported deployment uses backend atomic field updates, required by default.
-A missing/denied field route fails instead of falling back to a replacement.
-Stock compatibility has cross-client limits and is an operator choice, not a
-skill workaround. Atomic field masks preserve unrelated fields; they do not
+The default deployment supports stock Vikunja without a backend patch and prefers
+atomic field updates when advertised. An explicit operator requirement still
+blocks stock writes. A failed/denied advertised field route is never retried
+through a replacement endpoint. Atomic field masks preserve unrelated fields; they do not
 merge conflicting replacements of the same collection or add revision-based
 compare-and-swap. A read/merge/write of assignees or reminders can still conflict
 with another writer replacing that collection. Reconcile a detected conflict;
